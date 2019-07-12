@@ -10,7 +10,8 @@ const GAME_STATES = {
 
 const GAME_TEXT = {
     [GAME_STATES.AWAITING_PAYMENT]: "Welcome! \n",
-    [GAME_STATES.WAITING_FOR_PLAYERS]: "Payment Accepted "
+    [GAME_STATES.WAITING_FOR_PLAYERS]: "Payment Accepted ",
+    [GAME_STATES.LOADOUT]: "Load your gun and decide who to point it at"
 
 }
 
