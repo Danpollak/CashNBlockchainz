@@ -13,7 +13,7 @@ class LoadoutPhase extends React.Component {
             <div className='playersList'>
                 {players.map((rival) =>{
                     return <button
-                        style={{backgroundColor: rival == this.state.rival ? 'red' : 'blue'}}
+                        style={{backgroundColor: rival === this.state.rival ? 'red' : 'blue'}}
                         onClick={() => this.setState({rival: rival})}
                         key={rival}>
                         {rival}
@@ -37,6 +37,7 @@ class LoadoutPhase extends React.Component {
         return (
             <div className='bulletButton' style={{margin: '10px'}} key= {`${bulletType}BulletButton`}>
                 <img
+                    alt=""
                     width="100px"
                     height="200px"
                     src={`./${bulletType}.jpeg`}
@@ -56,11 +57,32 @@ class LoadoutPhase extends React.Component {
         }
         
     }
+    generateSubmitButton(){
+        return (
+                <div className="submitButton">
+                    <button
+                        onClick={this.sendLoadout}
+                        >
+                        Submit
+                    </button>
+                </div>)
+    }
+
+    sendLoadout(){
+        const {handleLoadout} = this.props;
+        const loadout = {
+            bullet: this.state.chosenBullet,
+            rival : this.state.rival
+        }
+        handleLoadout(loadout);
+        //TODO: lock choices
+    }
   render(){
       return (
         <div className="LoadoutPhase">
         {this.generateRivalButtons()}
         {this.generateBulletButtons()}
+        {this.generateSubmitButton()}
         </div>
         );
     }

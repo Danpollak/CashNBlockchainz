@@ -1,6 +1,7 @@
 import React from 'react';
 import LoadoutPhase from './LoadoutPhase'
 import {GAME_STATES, GAME_TEXT} from '../constants'
+import {encryptMessage} from '../utils'
 
 class GameLayout extends React.Component {
     constructor(){
@@ -8,7 +9,8 @@ class GameLayout extends React.Component {
         this.state ={
             gameState: GAME_STATES.AWAITING_PAYMENT,
             gameData: {players: ['bill','joe','chris','baba']},
-            playerData: {clickBullet: 0, bangBullet: 3}
+            playerData: {clickBullet: 0, bangBullet: 3},
+            commits: {}
         }
     }
 
@@ -49,7 +51,7 @@ class GameLayout extends React.Component {
                         <h2> round {gameData.round}</h2>
                         <h3> Pot: {gameData.pot}</h3>
                         {this.getGameText()}
-                        <LoadoutPhase gameData={gameData} playerData={playerData} />
+                        <LoadoutPhase gameData={gameData} playerData={playerData} handleLoadout={this.handleLoadout.bind(this)}/>
                     </div>
                 );
             }
@@ -68,6 +70,23 @@ class GameLayout extends React.Component {
         const gameData = e.detail;
         //this.setState({gameState: GAME_STATES.LOADOUT, gameData})
         this.setState({gameState: GAME_STATES.LOADOUT})
+    }
+    handleLoadout(chosenLoadout){
+        // create rivalCommit
+        const rivalMessage = encryptMessage({sender: 'me', content: chosenLoadout.rival})
+        const rivalCommit = {
+            rival: chosenLoadout.rival,
+            password: rivalMessage.password,
+            encryptedMessage: rivalMessage.encryptedMessage
+        }
+        // SEND ENCRYPTED MESSAGE OF RIVAL
+        const bulletMessage = encryptMessage({sender: 'me', content: chosenLoadout.chosenBullet})
+        // TODO: Decrease bullet of that suite
+        const bulletCommit = {
+            rival: chosenLoadout.rival,
+            password: rivalMessage.password,
+            encryptedMessage: rivalMessage.encryptedMessage
+        }
     }
   render(){
       return (
