@@ -2,10 +2,11 @@ const GAME_STATES = {
     "AWAITING_PAYMENT": 10,
     "WAITING_FOR_PLAYERS": 11,
     "LOADOUT": 20,
-    "HOLD_UP": 21,
-    "COURAGE": 22,
-    "REVEAL": 23,
-    "END_GAME": 30
+    "CONFIRM_LOADOUT": 21,
+    "HOLDUP": 30,
+    "CONFIRM_HOLDUP": 31,
+    "REVEAL": 40,
+    "END_GAME": 50
 }
 
 const GAME_TEXT = {

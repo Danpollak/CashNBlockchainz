@@ -61,7 +61,7 @@ class LoadoutPhase extends React.Component {
         return (
                 <div className="submitButton">
                     <button
-                        onClick={this.sendLoadout}
+                        onClick={this.sendLoadout.bind(this)}
                         >
                         Submit
                     </button>
@@ -78,8 +78,11 @@ class LoadoutPhase extends React.Component {
         //TODO: lock choices
     }
   render(){
+      const {gameData} = this.props;
       return (
         <div className="LoadoutPhase">
+        <h2> round {gameData.round}</h2>
+        <h3> Pot: {gameData.pot}</h3>
         {this.generateRivalButtons()}
         {this.generateBulletButtons()}
         {this.generateSubmitButton()}

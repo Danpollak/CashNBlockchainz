@@ -1,4 +1,5 @@
 import RandomString from 'randomstring'
+import {GAME_TEXT} from '../constants'
 const crypto = require('crypto');
 
 const generatePassword = () => {
@@ -14,4 +15,25 @@ const encryptMessage = ({sender, content}) => {
     }
 }
 
-export {encryptMessage}
+const getGameText = (gameState) => {
+    return GAME_TEXT[gameState];
+}
+
+
+/** WEB3 FUNCTIONS */
+
+const payForGame = () => {
+    return;
+}
+const sendEncryptedMessage = (type, message) => {
+    return;
+}
+
+const sendConfirmation = (commit) => {
+    return;
+}
+
+const getGameStatus = () => {
+    return;
+}
+export {encryptMessage, sendEncryptedMessage, sendConfirmation, getGameText, payForGame, getGameStatus}
