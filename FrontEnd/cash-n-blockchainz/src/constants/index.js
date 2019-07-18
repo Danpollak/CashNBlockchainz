@@ -16,4 +16,10 @@ const GAME_TEXT = {
 
 }
 
-export {GAME_STATES, GAME_TEXT};
+const PLAYER_STATUS = {
+    BANG: 'bang',
+    CLICK: 'click',
+    FOLD: 'fold'
+}
+
+export {GAME_STATES, GAME_TEXT, PLAYER_STATUS};

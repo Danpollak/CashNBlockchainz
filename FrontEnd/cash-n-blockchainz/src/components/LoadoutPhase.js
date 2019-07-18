@@ -1,4 +1,5 @@
 import React from 'react';
+import {GAME_STATES} from '../constants'
 
 class LoadoutPhase extends React.Component {
     constructor(){
@@ -58,13 +59,18 @@ class LoadoutPhase extends React.Component {
         
     }
     generateSubmitButton(){
+        const {gameState} = this.props;
+        const isSent = GAME_STATES.CONFIRM_LOADOUT === gameState;
         return (
                 <div className="submitButton">
                     <button
                         onClick={this.sendLoadout.bind(this)}
+                        disabled={isSent}
                         >
                         Submit
                     </button>
+                    <br/>
+                    {isSent ? "Waiting for all players" : null }
                 </div>)
     }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { GAME_STATES } from '../constants';
 const _ = require('lodash')
 
 class HoldupPhase extends React.Component {
@@ -76,15 +77,15 @@ class HoldupPhase extends React.Component {
     }
   render(){
       //const shouldDecideFold = this.shouldDecideFold()
-      const shouldDecideFold = true;
-      const {gameData} = this.props;
+      const {gameData, gameState} = this.props;
+      const isSent = GAME_STATES.CONFIRM_HOLDUP === gameState;
       return (
         <div className="LoadoutPhase">
         <h2> round {gameData.round}</h2>
         <h3> Pot: {gameData.pot}</h3>
         {this.generateHoldupStatus()}
-        {shouldDecideFold ? this.generateFoldingButtons() : null}
-        {shouldDecideFold ? this.generateSubmitButton() : "Waiting for Other Players"}
+        {!isSent ? this.generateFoldingButtons() : null}
+        {!isSent ? this.generateSubmitButton() : "Waiting for Other Players"}
         </div>
         );
     }

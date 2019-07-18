@@ -13,19 +13,39 @@ class GameLayout extends React.Component {
         this.state ={
             gameState: GAME_STATES.AWAITING_PAYMENT,
             gameData: {players: ['bill','joe','chris','baba'],
-                        shootingList: {bill: 'joe', chris:'bill', joe:'baba', baba:'joe'}},
+                        shootingList: {bill: 'joe', chris:'bill', joe:'baba', baba:'joe'},
+                        prevRounds:[
+                            {
+                                bill: {
+                                    action: 'bang',
+                                    rival: 'joe',
+                                    isFolding: false
+                                },
+                                chris: {
+                                    action: 'click',
+                                    rival: 'bill',
+                                    isFolding: false
+                                },
+                                joe: {
+                                    action: 'click',
+                                    rival: 'baba',
+                                    isFolding: true
+                                },
+                                baba: {
+                                    action: 'click',
+                                    rival: 'joe',
+                                    isFolding: false
+                                }
+                            }
+                        ],
+                        },
             playerData: {name: 'baba', clickBullet: 0, bangBullet: 3, waiting: false},
             commits: {}
         }
     }
 
     bindEvents() {
-        document.addEventListener('paymentRecieved', this.waitForStartGame)
-        document.addEventListener('startGame', this.startGame.bind(this))
-        document.addEventListener('endLoadout', this.endLoadout)
-        document.addEventListener('startHoldup', this.startHoldup)
-        document.addEventListener('endHoldup', this.endHoldup)
-        document.addEventListener('contractUpdated', this.updateGame)
+        document.addEventListener('contractUpdated', this.updateGame.bind(this))
         
     }
 
@@ -33,19 +53,37 @@ class GameLayout extends React.Component {
         this.bindEvents();
     }
 
-    updateGame() {
-        const gameStatus = getGameStatus();
-        this.setState({gameState: gameStatus})
-        if(GAME_STATES.CONFIRM_LOADOUT){
+    updateGame(e) {
+        console.log(e)
+        const {gameState} = this.state;
+        
+        //const gameStatus = getGameStatus();
+        //TODO: update gameData from updateGame
+        const {gameData} = e.detail;
+        const {gameStatus} = gameData;
+        // Check if state switch requires sending confirms
+        if(gameStatus === GAME_STATES.CONFIRM_LOADOUT){
             // SEND CONFIRM MESSAGES
         }
-        if(GAME_STATES.CONFIRM_HOLDUP){
+        if(gameStatus === GAME_STATES.CONFIRM_HOLDUP){
             // SEND CONFIRM MESSAGES
+        }
+        if(gameStatus !== GAME_STATES.LOADOUT){
+            this.setState({gameState: gameStatus})
+        } else {
+            // Check if its not start game
+            if(gameState === GAME_STATES.AWAITING_PAYMENT || gameState === GAME_STATES.WAITING_FOR_PLAYERS){
+                this.setState({gameState: gameStatus})
+            } else {
+                // If updated to LOADOUT, meaning a new round started - show the REVEAL state as round summary
+                this.setState({gameState: GAME_STATES.REVEAL})
+            }
         }
     }
 
     renderGameState() {
-        switch (this.state.gameState){
+        const {gameState} = this.state;
+        switch (gameState){
             case GAME_STATES.AWAITING_PAYMENT:{
               return (<AwaitPaymentPhase paymentMethod={this.beginWeb3Transaction.bind(this)}/>);     
             }
@@ -56,16 +94,16 @@ class GameLayout extends React.Component {
             case GAME_STATES.CONFIRM_LOADOUT:
                  {
                 const {gameData, playerData} = this.state;
-                return (<LoadoutPhase gameData={gameData} playerData={playerData} handleLoadout={this.handleLoadout.bind(this)}/>);
+                return (<LoadoutPhase gameData={gameData} playerData={playerData} gameState={gameState} handleLoadout={this.handleLoadout.bind(this)}/>);
             }
-            case GAME_STATES.SENT_HOLD_UP:
-            case GAME_STATES.CONFIRM_HOLD_UP: {
+            case GAME_STATES.HOLDUP:
+            case GAME_STATES.CONFIRM_HOLDUP: {
                 const {gameData, playerData} = this.state;
-                return (<HoldupPhase gameData={gameData} playerData={playerData} handleLoadout={this.handleLoadout.bind(this)}/>);
+                return (<HoldupPhase gameData={gameData} playerData={playerData} gameState={gameState} handleHoldup={this.handleHoldup.bind(this)}/>);
             }
             case GAME_STATES.REVEAL: {
                 const {gameData, playerData} = this.state;
-                return (<RevealPhase gameData={gameData} playerData={playerData} handleLoadout={this.handleLoadout.bind(this)}/>);
+                return (<RevealPhase gameData={gameData} playerData={playerData} continueToNextRound={this.continueToNextRound.bind(this)}/>);
             }
             default:{
                 return "I Am Groot"
@@ -75,6 +113,7 @@ class GameLayout extends React.Component {
 
     beginWeb3Transaction(){
         payForGame()
+        // TODO: wait for confirmation before moving to "wait for players"
         this.setState({gameState: GAME_STATES.WAITING_FOR_PLAYERS})
     }
 
@@ -104,8 +143,8 @@ class GameLayout extends React.Component {
         // TODO: send bulletMessage
         this.setState({rivalCommit: rivalCommit, bulletCommit: bulletCommit})
 
-        // TODO: remove later
-        this.setState({gameState: GAME_STATES.HOLD_UP})
+        // Acknowladge that sent loadout
+        this.setState({gameState: GAME_STATES.CONFIRM_LOADOUT})
     }
 
     handleHoldup(chosenHoldup) {
@@ -117,6 +156,13 @@ class GameLayout extends React.Component {
         }
         // TODO: send foldMessage
         this.setState({foldCommit: foldCommit})
+
+        // Acknowladge that sent loadout
+        this.setState({gameState: GAME_STATES.CONFIRM_HOLDUP})
+    }
+
+    continueToNextRound(){
+        this.setState({gameState: GAME_STATES.LOADOUT})
     }
 
   render(){
