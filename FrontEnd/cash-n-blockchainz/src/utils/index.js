@@ -1,6 +1,7 @@
 import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 const crypto = require('crypto');
+const Web3 = require('web3')
 
 const generatePassword = () => {
     return RandomString.generate({length: 12 }).toLowerCase()
