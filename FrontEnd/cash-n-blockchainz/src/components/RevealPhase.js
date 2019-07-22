@@ -1,7 +1,7 @@
 import React from 'react';
-import {PLAYER_STATUS} from '../constants'
+// import {PLAYER_STATUS} from '../constants'
 const _ = require('lodash')
-
+const PLAYER_STATUS = [];
 class revealPhase extends React.Component {
     getPlayerStatus(playerData){
         if(playerData.isFolding){

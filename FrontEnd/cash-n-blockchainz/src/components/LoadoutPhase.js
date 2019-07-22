@@ -1,5 +1,6 @@
 import React from 'react';
-import {GAME_STATES} from '../constants'
+import {GAME_STATES, BULLETS} from '../constants'
+const _ = require('lodash')
 
 class LoadoutPhase extends React.Component {
     constructor(){
@@ -8,23 +9,25 @@ class LoadoutPhase extends React.Component {
     }
 
     generateRivalButtons(){
-        let {players} = this.props.gameData
+        let {playersList} = this.props
+        console.log(playersList)
         //TODO: emit the current player
         return (
             <div className='playersList'>
-                {players.map((rival) =>{
+                {_.map(playersList, (rival) =>{
+                    const {nickname, addr} = rival
                     return <button
-                        style={{backgroundColor: rival === this.state.rival ? 'red' : 'blue'}}
-                        onClick={() => this.setState({rival: rival})}
-                        key={rival}>
-                        {rival}
+                        style={{backgroundColor: addr === this.state.rival ? 'red' : 'blue'}}
+                        onClick={() => this.setState({rival: addr})}
+                        key={addr}>
+                        {nickname}
                         </button>
                 })}
             </div>
         )
     }
     generateBulletButtons() {
-        const BULLET_TYPES = ['click','bang']
+        const BULLET_TYPES = ['CLICK','BANG']
         return (
             <div className='bulletButtons' style={{display:'inline-flex'}}>
                 {BULLET_TYPES.map((button) => this.createBulletButton(button))}
@@ -54,7 +57,7 @@ class LoadoutPhase extends React.Component {
     chooseBullet(bulletType) {
         //TODO: Throw out error if not able to choose
         if(this.props.playerData[`${bulletType}Bullet`] > 0){
-            this.setState({chosenBullet: bulletType})
+            this.setState({chosenBullet: BULLETS[bulletType]})
         }
         
     }
@@ -87,7 +90,7 @@ class LoadoutPhase extends React.Component {
       const {gameData} = this.props;
       return (
         <div className="LoadoutPhase">
-        <h2> round {gameData.round}</h2>
+        <h2> round {gameData.currentRound}</h2>
         <h3> Pot: {gameData.pot}</h3>
         {this.generateRivalButtons()}
         {this.generateBulletButtons()}

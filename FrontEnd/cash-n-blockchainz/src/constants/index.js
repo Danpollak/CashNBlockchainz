@@ -1,12 +1,12 @@
 const GAME_STATES = {
-    "AWAITING_PAYMENT": 10,
-    "WAITING_FOR_PLAYERS": 11,
-    "LOADOUT": 20,
-    "CONFIRM_LOADOUT": 21,
-    "HOLDUP": 30,
-    "CONFIRM_HOLDUP": 31,
-    "REVEAL": 40,
-    "END_GAME": 50
+    "AWAITING_PAYMENT": 0,
+    "WAITING_FOR_PLAYERS": 0.5,
+    "LOADOUT": 1,
+    "CONFIRM_LOADOUT": 2,
+    "HOLDUP": 3,
+    "CONFIRM_HOLDUP": 4,
+    "REVEAL": 4.5,
+    "END_GAME": 5
 }
 
 const GAME_TEXT = {
@@ -16,10 +16,14 @@ const GAME_TEXT = {
 
 }
 
-const PLAYER_STATUS = {
-    BANG: 'bang',
-    CLICK: 'click',
-    FOLD: 'fold'
+const BULLETS = {
+    CLICK: 2,
+    BANG: 1
 }
 
-export {GAME_STATES, GAME_TEXT, PLAYER_STATUS};
+const FOLD_STATES = {
+    FOLD: 4,
+    STAY: 3
+}
+
+export {GAME_STATES, GAME_TEXT, BULLETS, FOLD_STATES};
