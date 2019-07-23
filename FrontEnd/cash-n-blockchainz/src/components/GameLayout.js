@@ -23,7 +23,6 @@ class GameLayout extends React.Component {
 
 
     componentDidMount() {
-        console.log('test')
         document.addEventListener('goToPhase', (e) => {
             this.startGame()
         })
@@ -82,8 +81,8 @@ class GameLayout extends React.Component {
     }
 
     async beginWeb3Transaction(){
-        const isPaid = await payForGame("bob");
         setContractListeners(this.startGame.bind(this),this.renderGameState.bind(this));
+        const isPaid = await payForGame("bob");
         if(isPaid){
             this.setState({gameState: GAME_STATES.WAITING_FOR_PLAYERS});
         }

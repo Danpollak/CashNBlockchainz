@@ -36,23 +36,18 @@
         uint isFolding;
         }
         
-        struct RoundData {
-            uint roundNum;
-            mapping (address => PlayerActions) actions;
-        }
+        mapping (address => PlayerActions) public currentRound;
 
         Phases public currentPhase = Phases.WaitingForPlayers;
-        RoundData public currentRound;
-        RoundData[] public rounds;
         uint public roundNum = 0;
         uint public maxRound = 8;
         uint numberOfPlayers = 2;
         uint numberOfPlayersAlive = numberOfPlayers;
         uint public numRegistered = 0;
-        uint actionCount = 0;
+        uint public actionCount = 0;
         uint public buyIn = 1 ether / 10;
         uint public roundValue = (buyIn*numberOfPlayers) / 8;
-        address payable[] public playersList = new address payable[](6);
+        address payable[] public playersList = new address payable[](numberOfPlayers);
 
         event GameStart();
         event NextPhase();
@@ -75,8 +70,9 @@
             playersInfo[msg.sender].pointsCount = 0;
             
             // increase player count and add the player to playerList
+            playersList[numRegistered] = msg.sender;
             numRegistered++;
-            playersList.push(msg.sender);
+            
 
             // check if can start game
             if (numRegistered == numberOfPlayers) {
@@ -86,11 +82,7 @@
 
         function startGame() internal {
             roundNum++;
-            RoundData memory firstRound;
-            firstRound.roundNum = roundNum;
-            rounds.push(firstRound);
             currentPhase = Phases.LoadoutCommit;
-            currentRound = firstRound;
             emit GameStart();
         }
         
@@ -104,12 +96,12 @@
             _;
         }
         
-        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) isPlayerAlive(msg.sender) atStage(Phases.LoadoutCommit) external  {
+        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) external  {
             //TODO: sender is part of the game!
-            require(currentRound.actions[msg.sender].rivalCommit == "", "Only send commits once");
-            require(currentRound.actions[msg.sender].bulletCommit == "", "Only send commits once");
-            currentRound.actions[msg.sender].rivalCommit = _rivalCommit;
-            currentRound.actions[msg.sender].bulletCommit = _bulletCommit;
+            require(currentRound[msg.sender].rivalCommit == "", "Only send commits once");
+            require(currentRound[msg.sender].bulletCommit == "", "Only send commits once");
+            currentRound[msg.sender].rivalCommit = _rivalCommit;
+            currentRound[msg.sender].bulletCommit = _bulletCommit;
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
                 currentPhase = Phases.LoadoutReveal;
@@ -118,22 +110,22 @@
             }
         }
 
-        function loadoutReveal(string calldata _rivalPassword, address _rivalReveal) isPlayerAlive(msg.sender) atStage(Phases.LoadoutReveal) external {
-            bytes32 rivalApprove = keccak256(abi.encodePacked(_rivalPassword,"-",_rivalReveal));
-            require(currentRound.actions[msg.sender].rivalCommit == rivalApprove,"Failed Reveal - doesn't match your commit.");
-            currentRound.actions[msg.sender].rival = _rivalReveal;
+        function loadoutReveal(string calldata _rivalPassword, bytes20 _rivalReveal) external {
+            bytes32 rivalApprove = keccak256(abi.encode(_rivalPassword,_rivalReveal));
+            require(currentRound[msg.sender].rivalCommit == rivalApprove,"Failed Reveal - doesn't match your commit.");
+            currentRound[msg.sender].rival = address(_rivalReveal);
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
-                currentPhase = Phases.HoldupCommit;
-                actionCount = 0;
-                emit NextPhase();
+                 currentPhase = Phases.HoldupCommit;
+                 actionCount = 0;
+                 emit NextPhase();
             }
         }
-
-        function holdupCommit(bytes32 _isFoldCommit) isPlayerAlive(msg.sender) atStage(Phases.HoldupCommit) external {
+ 
+        function holdupCommit(bytes32 _isFoldCommit) external {
             //TODO: Validate player not sent twice
-            require(currentRound.actions[msg.sender].isFoldCommit == "", "Only send commits once");
-            currentRound.actions[msg.sender].isFoldCommit = _isFoldCommit;
+            require(currentRound[msg.sender].isFoldCommit == "", "Only send commits once");
+            currentRound[msg.sender].isFoldCommit = _isFoldCommit;
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
                 currentPhase = Phases.HoldupReveal;
@@ -143,13 +135,13 @@
         }
 
         function holdupReveal(string calldata _bulletPassword, string calldata _isFoldPassword,
-                                uint8 _bulletReveal, uint8 _isFoldReveal) isPlayerAlive(msg.sender) atStage(Phases.HoldupReveal) external {
+                                uint8 _bulletReveal, uint8 _isFoldReveal) external {
             bytes32 bulletApprove = keccak256(abi.encodePacked(_bulletPassword,"-",_bulletReveal));
-            require(currentRound.actions[msg.sender].bulletCommit == bulletApprove,"Failed Reveal");
+            require(currentRound[msg.sender].bulletCommit == bulletApprove,"Failed Reveal");
             bytes32 isFoldApprove = keccak256(abi.encodePacked(_isFoldPassword,"-",_isFoldReveal));
-            require(currentRound.actions[msg.sender].isFoldCommit == isFoldApprove,"Failed Reveal");
-            currentRound.actions[msg.sender].bullet = _bulletReveal;
-            currentRound.actions[msg.sender].isFolding = _isFoldReveal;
+            require(currentRound[msg.sender].isFoldCommit == isFoldApprove,"Failed Reveal");
+            currentRound[msg.sender].bullet = _bulletReveal;
+            currentRound[msg.sender].isFolding = _isFoldReveal;
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
                 endRound();
@@ -167,7 +159,7 @@
                     continue;
                 }
                 address currentPlayer = playersList[i];
-                PlayerActions memory currentPlayerActions = currentRound.actions[currentPlayer];
+                PlayerActions memory currentPlayerActions = currentRound[currentPlayer];
                 // if player has folded, throw him out of the round pot
                 if(currentPlayerActions.isFolding == FOLD){
                     leftoutPlayers[leftoutPlayersCount] = currentPlayer;
@@ -176,7 +168,7 @@
                 // if player has shot a BANG bullet
                 else if(currentPlayerActions.bullet == BANG){
                     // if player's rival did not fold
-                    if(currentRound.actions[currentPlayerActions.rival].isFolding == STAY){
+                    if(currentRound[currentPlayerActions.rival].isFolding == STAY){
                         // throw the rival out of the round pot
                         leftoutPlayers[leftoutPlayersCount] = currentPlayerActions.rival;
                         leftoutPlayersCount++;
@@ -212,11 +204,12 @@
             if(roundNum > maxRound){
                 endGame();
             } else {
-                RoundData memory newRound;
-                newRound.roundNum = roundNum;
-                rounds.push(newRound);
+                //TODO: clear the currentRound data
+                //RoundData memory newRound;
+                //newRound.roundNum = roundNum;
+                //rounds.push(newRound);
                 currentPhase = Phases.LoadoutCommit;
-                currentRound = newRound;
+                //currentRound = newRound;
                 actionCount = 0;
                 emit NextPhase();
             }
@@ -232,7 +225,7 @@
         function getRoundRivals() external view returns(address[] memory){
             address[] memory roundRivals = new address[](numberOfPlayers);
             for(uint i=0;i<playersList.length;i++){
-                roundRivals[i] = currentRound.actions[playersList[i]].rival;
+                roundRivals[i] = currentRound[playersList[i]].rival;
             }
             return roundRivals;
         }
@@ -240,7 +233,7 @@
         function getRoundBullets() external view returns(uint[] memory){
             uint[] memory roundBullets = new uint[](numberOfPlayers);
             for(uint i=0;i<playersList.length;i++){
-                roundBullets[i] = currentRound.actions[playersList[i]].bullet;
+                roundBullets[i] = currentRound[playersList[i]].bullet;
             }
             return roundBullets;
         }
@@ -248,7 +241,7 @@
         function getRoundFolds() external view returns(uint[] memory){
             uint[] memory roundFolds = new uint[](numberOfPlayers);
             for(uint i=0;i<playersList.length;i++){
-                roundFolds[i] = currentRound.actions[playersList[i]].isFolding;
+                roundFolds[i] = currentRound[playersList[i]].isFolding;
             }
             return roundFolds;
         }
