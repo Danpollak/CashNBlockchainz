@@ -10,14 +10,13 @@ class LoadoutPhase extends React.Component {
 
     generateRivalButtons(){
         let {playersList} = this.props
-        console.log(playersList)
         //TODO: emit the current player
         return (
             <div className='playersList'>
                 {_.map(playersList, (rival) =>{
                     const {nickname, addr} = rival
                     return <button
-                        style={{backgroundColor: addr === this.state.rival ? 'red' : 'blue'}}
+                        style={{backgroundColor: addr === this.state.addr ? 'red' : 'blue'}}
                         onClick={() => this.setState({rival: addr})}
                         key={addr}>
                         {nickname}
@@ -38,6 +37,7 @@ class LoadoutPhase extends React.Component {
     createBulletButton(bulletType){
         const {playerData} = this.props
         const {chosenBullet}  = this.state
+        const bulletValue = BULLETS[bulletType]
         return (
             <div className='bulletButton' style={{margin: '10px'}} key= {`${bulletType}BulletButton`}>
                 <img
@@ -45,19 +45,19 @@ class LoadoutPhase extends React.Component {
                     width="100px"
                     height="200px"
                     src={`./${bulletType}.jpeg`}
-                    border={bulletType === chosenBullet ? '3px' : '0px'}
+                    border={bulletValue === chosenBullet ? '3px' : '0px'}
                     onClick={() => this.chooseBullet(bulletType)}
                     
                      />
                      <br/>
-                        Remaining Bullets : {playerData[`${bulletType}Bullet`]}
+                        Remaining Bullets : {playerData[`${bulletType.toLowerCase()}Bullet`]}
                 </div>
         )
     }
     chooseBullet(bulletType) {
         //TODO: Throw out error if not able to choose
-        if(this.props.playerData[`${bulletType}Bullet`] > 0){
-            this.setState({chosenBullet: BULLETS[bulletType]})
+        if(this.props.playerData[`${bulletType.toLowerCase()}Bullet`] > 0){
+            this.setState({chosenBullet: BULLETS[bulletType.toUpperCase()]})
         }
         
     }

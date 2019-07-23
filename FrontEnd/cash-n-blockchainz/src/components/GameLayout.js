@@ -25,8 +25,6 @@ class GameLayout extends React.Component {
     componentDidMount() {
         console.log('test')
         document.addEventListener('goToPhase', (e) => {
-            //const phase = e.detail.phase;
-            //this.setState({gameState: phase});
             this.startGame()
         })
     }
@@ -95,7 +93,6 @@ class GameLayout extends React.Component {
     async startGame() {
         const playersList = await getPlayersList();
         const pot = await getPotValue();
-        console.log('playersList',playersList)
         const gameData = {pot: pot, currentRound: 1}
         this.setState({gameState: GAME_STATES.LOADOUT, playersList: playersList, gameData: gameData})
     }
@@ -112,14 +109,14 @@ class GameLayout extends React.Component {
         // create bulletCommit
         const bulletMessage = encryptMessage({sender: 'me', content: chosenLoadout.chosenBullet})
         const bulletCommit = {
-            rival: chosenLoadout.rival,
+            bullet: chosenLoadout.bullet,
             password: bulletMessage.password,
             encryptedMessage: bulletMessage.encryptedMessage
         }
         
         // send commits
         const isSent = await sendLoadoutCommit(rivalMessage.encryptedMessage, bulletMessage.encryptedMessage);
-
+        // const isSent = false;
         // if send is successful
         if(isSent){
             const {playerData} = this.state;
