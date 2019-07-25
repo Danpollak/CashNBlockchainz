@@ -1,163 +1,5 @@
 export const jsonInterface = [
 	{
-		"anonymous": false,
-		"inputs": [],
-		"name": "GameStart",
-		"type": "event"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_isFoldCommit",
-				"type": "bytes32"
-			}
-		],
-		"name": "holdupCommit",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_bulletPassword",
-				"type": "string"
-			},
-			{
-				"name": "_bulletReveal",
-				"type": "uint8"
-			},
-			{
-				"name": "_isFoldPassword",
-				"type": "string"
-			},
-			{
-				"name": "_isFoldReveal",
-				"type": "uint8"
-			}
-		],
-		"name": "holdupReveal",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_rivalCommit",
-				"type": "bytes32"
-			},
-			{
-				"name": "_bulletCommit",
-				"type": "bytes32"
-			}
-		],
-		"name": "loadoutCommit",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_rivalPassword",
-				"type": "string"
-			},
-			{
-				"name": "_rivalReveal",
-				"type": "bytes20"
-			}
-		],
-		"name": "loadoutReveal",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [],
-		"name": "NextPhase",
-		"type": "event"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_nickname",
-				"type": "string"
-			}
-		],
-		"name": "register",
-		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "actionCount",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "addr1",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "addr2",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "buyIn",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
 		"name": "currentPhase",
@@ -165,73 +7,6 @@ export const jsonInterface = [
 			{
 				"name": "",
 				"type": "uint8"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "currentRound",
-		"outputs": [
-			{
-				"name": "rivalCommit",
-				"type": "bytes32"
-			},
-			{
-				"name": "bulletCommit",
-				"type": "bytes32"
-			},
-			{
-				"name": "isFoldCommit",
-				"type": "bytes32"
-			},
-			{
-				"name": "rival",
-				"type": "address"
-			},
-			{
-				"name": "bullet",
-				"type": "uint8"
-			},
-			{
-				"name": "isFolding",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "maxRound",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "numRegistered",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -279,21 +54,48 @@ export const jsonInterface = [
 	},
 	{
 		"constant": true,
-		"inputs": [
+		"inputs": [],
+		"name": "roundNum",
+		"outputs": [
 			{
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "playersList",
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "actionCount",
 		"outputs": [
 			{
 				"name": "",
-				"type": "address"
+				"type": "uint256"
 			}
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_rivalCommit",
+				"type": "bytes32"
+			},
+			{
+				"name": "_bulletCommit",
+				"type": "bytes32"
+			}
+		],
+		"name": "loadoutCommit",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -318,11 +120,145 @@ export const jsonInterface = [
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "roundNum",
+		"name": "buyIn",
 		"outputs": [
 			{
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "playersList",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_bulletPassword",
+				"type": "string"
+			},
+			{
+				"name": "_bulletReveal",
+				"type": "uint8"
+			},
+			{
+				"name": "_isFoldPassword",
+				"type": "string"
+			},
+			{
+				"name": "_isFoldReveal",
+				"type": "uint8"
+			}
+		],
+		"name": "holdupReveal",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "addr2",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "maxRound",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_rivalPassword",
+				"type": "string"
+			},
+			{
+				"name": "_rivalReveal",
+				"type": "bytes20"
+			}
+		],
+		"name": "loadoutReveal",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "currentRound",
+		"outputs": [
+			{
+				"name": "rivalCommit",
+				"type": "bytes32"
+			},
+			{
+				"name": "bulletCommit",
+				"type": "bytes32"
+			},
+			{
+				"name": "isFoldCommit",
+				"type": "bytes32"
+			},
+			{
+				"name": "rival",
+				"type": "address"
+			},
+			{
+				"name": "bullet",
+				"type": "uint8"
+			},
+			{
+				"name": "isFolding",
+				"type": "uint256"
+			},
+			{
+				"name": "isOut",
+				"type": "bool"
 			}
 		],
 		"payable": false,
@@ -342,5 +278,73 @@ export const jsonInterface = [
 		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "numRegistered",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_isFoldCommit",
+				"type": "bytes32"
+			}
+		],
+		"name": "holdupCommit",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "addr1",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_nickname",
+				"type": "string"
+			}
+		],
+		"name": "register",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [],
+		"name": "GameStart",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [],
+		"name": "NextPhase",
+		"type": "event"
 	}
 ]

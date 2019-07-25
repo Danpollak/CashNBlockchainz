@@ -1,8 +1,7 @@
 import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 import {jsonInterface} from '../contractABI'
-const keccak256 = require('js-sha3').keccak_256;
-const CONTRACT_ADDRESS = '0x1cc7aa1c15aaed1740584db05ece3cb860a248ef';
+const CONTRACT_ADDRESS = '0xd87fdca47d6008cf6a6c094199ace741eedfbbf9';
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider('ws://localhost:8546'), null, {});
 

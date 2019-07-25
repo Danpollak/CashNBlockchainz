@@ -34,6 +34,7 @@
         address rival;
         uint8 bullet;
         uint isFolding;
+        bool isOut;
         }
         
         mapping (address => PlayerActions) public currentRound;
@@ -41,15 +42,14 @@
         Phases public currentPhase = Phases.WaitingForPlayers;
         uint public roundNum = 0;
         uint public maxRound = 8;
-        uint numberOfPlayers = 1;
+        uint numberOfPlayers = 2;
         uint numberOfPlayersAlive = numberOfPlayers;
         uint public numRegistered = 0;
         uint public actionCount = 0;
         uint public buyIn = 1 ether / 10;
         uint public roundValue = (buyIn*numberOfPlayers) / 8;
         address payable[] public playersList = new address payable[](numberOfPlayers);
-        bytes32 public addr1;
-        bytes32 public addr2;
+        uint public prize;
 
         event GameStart();
         event NextPhase();
@@ -146,72 +146,70 @@
             currentRound[msg.sender].isFolding = _isFoldReveal;
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
-            //    endRound();
+                endRound();
             }
         }
         
         function endRound() internal{
 
             // use the player actions data
-            address[] memory leftoutPlayers = new address[](numberOfPlayers);
+            // address[] memory leftoutPlayers = new address[](numberOfPlayers);
             uint8 leftoutPlayersCount;
             leftoutPlayersCount = 0;
-            for(uint i = 0; i < playersList.length; i++){
-                if(playersInfo[playersList[i]].wounds > 2){
+            for(uint i = 0; i < numberOfPlayers; i++){
+                address currentPlayer = playersList[i];
+                if(playersInfo[currentPlayer].wounds > 2){
+                    leftoutPlayersCount++;
                     continue;
                 }
-                address currentPlayer = playersList[i];
-                PlayerActions memory currentPlayerActions = currentRound[currentPlayer];
                 // if player has folded, throw him out of the round pot
-                if(currentPlayerActions.isFolding == FOLD){
-                    leftoutPlayers[leftoutPlayersCount] = currentPlayer;
+                if(currentRound[currentPlayer].isFolding == FOLD){
+                    currentRound[currentPlayer].isOut = true;
                     leftoutPlayersCount++;
                 }
                 // if player has shot a BANG bullet
-                else if(currentPlayerActions.bullet == BANG){
+                else if(currentRound[currentPlayer].bullet == BANG){
                     // if player's rival did not fold
-                    if(currentRound[currentPlayerActions.rival].isFolding == STAY){
+                    address rival = currentRound[currentPlayer].rival;
+                    if(currentRound[rival].isFolding == STAY){
                         // throw the rival out of the round pot
-                        leftoutPlayers[leftoutPlayersCount] = currentPlayerActions.rival;
+                        currentRound[rival].isOut = true;
                         leftoutPlayersCount++;
                         // add rival a wound
-                        playersInfo[currentPlayerActions.rival].wounds++;
+                        playersInfo[rival].wounds++;
                     }
                 }
             // add data to playerInfo
-            if(currentPlayerActions.bullet == BANG){
+            if(currentRound[currentPlayer].bullet == BANG){
                 playersInfo[currentPlayer].bangUsed++;
-            } else {
-                playersInfo[currentPlayer].clickUsed++;
-            }
+             } else {
+                 playersInfo[currentPlayer].clickUsed++;
+             }
             }
 
-            // deal the prize
-            uint prize = roundValue / (playersList.length - leftoutPlayers.length);
-            bool shouldWin = true;
-            for(uint i = 0;i < playersList.length;i++){
-                for(uint j = 0;j < leftoutPlayers.length;j++){
-                    if(leftoutPlayers[j] == playersList[i]){
-                        shouldWin = false;
-                    }
+            // // deal the prize
+            if(numberOfPlayers - leftoutPlayersCount == 0){
+                prize = 0;
+            } else {
+                prize = roundValue / (numberOfPlayers - leftoutPlayersCount);
+            }
+            for(uint i = 0;i < numberOfPlayers;i++){
+                address currentPlayer = playersList[i];
+                if((!currentRound[currentPlayer].isOut) || (playersInfo[currentPlayer].wounds < 3)){
+                    pointsEarned[currentPlayer]+=prize;
                 }
-                if(shouldWin){
-                    pointsEarned[playersList[i]] += prize;
-                }
-                shouldWin = true;
             }
 
             // check if to move to next round or end game
-            roundNum++;
+             roundNum++;
             if(roundNum > maxRound){
                 endGame();
             } else {
-                //TODO: clear the currentRound data
-                //RoundData memory newRound;
-                //newRound.roundNum = roundNum;
-                //rounds.push(newRound);
+            for(uint i = 0; i < numberOfPlayers; i++){
+                address currentPlayer = playersList[i];
+                delete currentRound[currentPlayer];
+            }
                 currentPhase = Phases.LoadoutCommit;
-                //currentRound = newRound;
                 actionCount = 0;
                 emit NextPhase();
             }

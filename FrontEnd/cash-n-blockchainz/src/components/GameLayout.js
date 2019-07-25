@@ -36,9 +36,7 @@ class GameLayout extends React.Component {
 
     async updateGameState() {
         const newGameState = await getGamePhase();
-        if(newGameState !== GAME_STATES.LOADOUT){
-            this.setState({gameState: newGameState})
-        }
+        this.setState({gameState: newGameState})
     }
 
     renderGameState() {
