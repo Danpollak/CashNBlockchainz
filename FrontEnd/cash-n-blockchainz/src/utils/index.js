@@ -2,7 +2,7 @@ import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 import {jsonInterface} from '../contractABI'
 const keccak256 = require('js-sha3').keccak_256;
-const CONTRACT_ADDRESS = '0x0d6ef3bd9e3ced19381ff306c9ef9ae59e04a6d4';
+const CONTRACT_ADDRESS = '0x1cc7aa1c15aaed1740584db05ece3cb860a248ef';
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider('ws://localhost:8546'), null, {});
 
@@ -11,7 +11,6 @@ const generatePassword = () => {
 }
 
 const encryptMessage = ({content, type}) => {
-    console.log(type, content)
     const password = generatePassword();
     const message = web3.eth.abi.encodeParameters(['string',type],[password, content]);
     const encryptedMessage = web3.utils.keccak256(message);
@@ -55,6 +54,8 @@ const setContractListeners = (gameStart, nextPhase) => {
     const contract = getContract();
     contract.events.GameStart({}, gameStart);
     contract.events.NextPhase({}, nextPhase);
+    contract.events.NextPhase({}, () => console.log("nextPhase"));
+    console.log("listening");
 }
 
 const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
@@ -62,14 +63,13 @@ const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
         const contract = getContract();
         const playerAccount = await getPlayerAccount();
         const receipt = await contract.methods.loadoutCommit(rivalCommit, bulletCommit).send({from: playerAccount});
+        console.log(receipt);
+        return true;
     } catch (e) {
         console.log(e)
         console.log('failed tx')
         return false; 
-    } finally {
-        return true;
     }
-
 }
 
 const confirmLoadout = async (commit) => {
@@ -87,10 +87,38 @@ const confirmLoadout = async (commit) => {
     }
 }
 
+const sendHoldupCommit = async (foldCommit) => {
+    try {
+        const contract = getContract();
+        const playerAccount = await getPlayerAccount();
+        const receipt = await contract.methods.holdupCommit(foldCommit).send({from: playerAccount});
+        console.log(receipt);
+        return true;
+    } catch (e) {
+        console.log(e)
+        console.log('failed tx')
+        return false; 
+    }
+}
+
+const confirmHoldup = async (bulletCommit, foldCommit) => {
+    try {
+    const contract = getContract();
+    const playerAccount = await getPlayerAccount();
+    console.log(bulletCommit.password, bulletCommit.bullet, foldCommit.password, foldCommit.isFolding);
+    const receipt = await contract.methods.holdupReveal(bulletCommit.password, bulletCommit.bullet, foldCommit.password, foldCommit.isFolding).send({from: playerAccount});
+    console.log(receipt) 
+    return true;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+}
+
 const getGamePhase = async () => {
     try {
         const contract = getContract();
-        const gamePhase =  await contract.methods.getGamePhase().call();
+        const gamePhase =  await contract.methods.currentPhase().call();
         return gamePhase;
     } catch (e) {
         console.log(e)
@@ -110,11 +138,14 @@ const getPlayersList = async () => {
     return playerList;
 }
 
-const getRivalList = async () => {
+const getPlayerAction = async (playerList,action) => {
     const contract = getContract();
-    const rivalList = await contract.methods.getRoundRivals().call();
-    console.log(rivalList)
-    return rivalList;
+    let actionList = {};
+    for(let playerAddress in playerList){
+        const playerAction = await contract.methods.currentRound(playerAddress).call();
+        actionList[playerAddress] = playerAction[action];
+    }
+    return actionList;
 }
 
 const getPotValue = async () => {
@@ -124,4 +155,4 @@ const getPotValue = async () => {
     return potValue;
 }
 
-export {getPotValue, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, getGameText, payForGame, getGamePhase}
+export {getPotValue, sendHoldupCommit, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, confirmHoldup, getGameText, payForGame, getGamePhase, getPlayerAction}

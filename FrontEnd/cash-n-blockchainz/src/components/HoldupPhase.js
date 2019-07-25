@@ -1,25 +1,33 @@
 import React from 'react';
-import { GAME_STATES } from '../constants';
+import { GAME_STATES, FOLD_STATES } from '../constants';
+import {getPlayerAction} from '../utils'
 const _ = require('lodash')
 
 class HoldupPhase extends React.Component {
     constructor(){
         super();
-        this.state = {isFolding: false}
+        this.state = {isFolding: false, shootingList: {}};
+    }
+
+    async componentWillMount() {
+        const {playersList} = this.props;
+        let shootingList = await getPlayerAction(playersList,'rival');
+        this.setState({shootingList: shootingList});
     }
 
     generateHoldupStatus(){
-        let {shootingList} = this.props.gameData
-        //TODO: highlight the current player choice
+        const {playersList} = this.props;
+        const {shootingList} = this.state;
+        //let shootingList = await getPlayerAction(playersList,'rival');
         return (
             <div className='shootingList'>
                 <table>
                     <tbody>
                         {_.map(shootingList, (val,key) =>{
                             return (<tr>
-                                <td>{key}</td>
+                                <td>{playersList[key].nickname}</td>
                                 <td>points at</td>
-                                <td>{val}</td>
+                                <td>{playersList[val].nickname}</td>
                                 </tr>
                         )})}
                     </tbody>
@@ -29,10 +37,9 @@ class HoldupPhase extends React.Component {
     }
 
     generateFoldingButtons() {
-        const BUTTON_TYPES = {fold: true, stay: false}
         return (
             <div className='bulletButtons' style={{display:'inline-flex'}}>
-                {_.map(BUTTON_TYPES, (value, key) => this.createFoldingButton(value, key))}
+                {_.map(FOLD_STATES, (value, key) => this.createFoldingButton(value, key))}
             </div>
         )
     }
@@ -46,49 +53,44 @@ class HoldupPhase extends React.Component {
     }
 
     generateSubmitButton(){
+        const {confirmHoldup, gameState} = this.props;
+        const isSent = GAME_STATES.CONFIRM_HOLDUP === gameState;
         return (
                 <div className="submitButton">
                     <button
-                        onClick={this.sendLDecideFold.bind(this)}
+                        onClick={isSent ? confirmHoldup : this.sendDecideFold.bind(this)}
                         >
-                        Submit
+                        {isSent ? 'Confirm' : 'Submit'}
                     </button>
                 </div>)
     }
 
-    sendLDecideFold(){
+    sendDecideFold(){
         const {handleHoldup} = this.props;
         const holdup = {
             isFolding: this.state.isFolding,
         }
         handleHoldup(holdup);
-        //TODO: lock choices
     }
 
-    shouldDecideFold() {
-        let {shootingList} = this.props.gameData;
-        const me = this.props.playerData.name;
-        for( let val in shootingList){
-            if(shootingList[val] === me){
-                return true;
-            }
-        }
-        return false;
-    }
-  render(){
-      //const shouldDecideFold = this.shouldDecideFold()
+    render(){
       const {gameData, gameState} = this.props;
       const isSent = GAME_STATES.CONFIRM_HOLDUP === gameState;
       return (
         <div className="LoadoutPhase">
-        <h2> round {gameData.round}</h2>
-        <h3> Pot: {gameData.pot}</h3>
-        {this.generateHoldupStatus()}
-        {!isSent ? this.generateFoldingButtons() : null}
-        {!isSent ? this.generateSubmitButton() : "Waiting for Other Players"}
+            <h2> round {gameData.round}</h2>
+            <h3> Pot: {gameData.pot}</h3>
+            {this.generateHoldupStatus()}
+            {this.generateFoldingButtons()}
+            {this.generateSubmitButton()}
         </div>
         );
     }
 }
 
+{/* <h2> round {gameData.round}</h2>
+<h3> Pot: {gameData.pot}</h3>
+{this.generateHoldupStatus()}
+{!isSent ? this.generateFoldingButtons() : null}
+{!isSent ? this.generateSubmitButton() : "Waiting for Other Players"} */}
 export default HoldupPhase;

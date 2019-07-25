@@ -6,7 +6,7 @@ import WaitingForPlayersPhase from './WaitForPlayersPhase'
 import RevealPhase from './RevealPhase'
 import {GAME_STATES, BULLETS, FOLD_STATES} from '../constants'
 import {setContractListeners, getPlayersList, encryptMessage, sendLoadoutCommit,
-    getGameText, payForGame, getGamePhase, confirmLoadout, getPotValue} from '../utils'
+    getGameText, payForGame, getGamePhase, confirmLoadout, confirmHoldup, getPotValue, sendHoldupCommit} from '../utils'
 
 class GameLayout extends React.Component {
     constructor(){
@@ -27,32 +27,22 @@ class GameLayout extends React.Component {
 
 
     componentDidMount() {
+        setInterval(this.updateGameState.bind(this), 60 * 1000)
         document.addEventListener('goToPhase', (e) => {
             setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
-            this.startGame().then(() =>this.setState({gameState:1}));
+            this.startGame().then(() =>this.updateGameState());
         })
     }
 
     async updateGameState() {
         const newGameState = await getGamePhase();
-        if(newGameState === GAME_STATES.CONFIRM_HOLDUP){
-            // TODO: SEND CONFIRM MESSAGES
-        }
         if(newGameState !== GAME_STATES.LOADOUT){
             this.setState({gameState: newGameState})
-        } else {
-            // Check if its not start game
-            if(newGameState === GAME_STATES.AWAITING_PAYMENT || newGameState === GAME_STATES.WAITING_FOR_PLAYERS){
-                this.setState({gameState: newGameState})
-            } else {
-                // If updated to LOADOUT, meaning a new round started - show the REVEAL state as round summary
-                this.setState({gameState: GAME_STATES.REVEAL})
-            }
         }
     }
 
     renderGameState() {
-        const {gameState} = this.state;
+        const {gameState, gameData, playerData, playersList} = this.state;
         switch (gameState){
             case GAME_STATES.AWAITING_PAYMENT:{
               return (<AwaitPaymentPhase paymentMethod={this.beginWeb3Transaction.bind(this)}/>);     
@@ -63,7 +53,6 @@ class GameLayout extends React.Component {
             case GAME_STATES.LOADOUT:
             case GAME_STATES.CONFIRM_LOADOUT:
                  {
-                const {gameData, playerData, playersList} = this.state;
                 return (<LoadoutPhase gameData={gameData}
                     playersList={playersList}
                     playerData={playerData}
@@ -74,7 +63,13 @@ class GameLayout extends React.Component {
             case GAME_STATES.HOLDUP:
             case GAME_STATES.CONFIRM_HOLDUP: {
                 const {gameData, playerData} = this.state;
-                return (<HoldupPhase gameData={gameData} playerData={playerData} gameState={gameState} handleHoldup={this.handleHoldup.bind(this)}/>);
+                return (<HoldupPhase gameData={gameData}
+                    playersList={playersList}
+                    playerData={playerData}
+                    gameState={gameState}
+                    handleHoldup={this.handleHoldup.bind(this)}
+                    confirmHoldup={this.sendConfirmHoldup.bind(this)}
+                    />);
             }
             case GAME_STATES.REVEAL: {
                 const {gameData, playerData} = this.state;
@@ -112,7 +107,6 @@ class GameLayout extends React.Component {
         }
 
         // create bulletCommit
-        console.log(chosenLoadout)
         const bulletMessage = encryptMessage({type: 'uint8', content: chosenLoadout.bullet})
         const bulletCommit = {
             bullet: chosenLoadout.bullet,
@@ -122,7 +116,6 @@ class GameLayout extends React.Component {
         
         // send commits
         const isSent = await sendLoadoutCommit(rivalMessage.encryptedMessage, bulletMessage.encryptedMessage);
-        // const isSent = false;
         // if send is successful
         if(isSent){
             const {playerData} = this.state;
@@ -130,27 +123,33 @@ class GameLayout extends React.Component {
             const isClick = chosenLoadout.chosenBullet === BULLETS.CLICK;
             updatedPlayerData.clickBullet = isClick ? playerData.clickBullet -1 : playerData.clickBullet;
             updatedPlayerData.bangBullet = isClick ? playerData.bangBullet : playerData.bangBullet - 1;
-            this.setState({gameState: GAME_STATES.CONFIRM_LOADOUT, playerData: updatedPlayerData, rivalCommit: rivalCommit, bulletCommit: bulletCommit})
+            this.setState({playerData: updatedPlayerData, rivalCommit: rivalCommit, bulletCommit: bulletCommit})
         }
     }
 
     async sendConfirmLoadout () {
-        console.log(this.state)
         await confirmLoadout(this.state.rivalCommit);
     }
 
-    handleHoldup(chosenHoldup) {
+    async sendConfirmHoldup () {
+        await confirmHoldup(this.state.bulletCommit,this.state.foldCommit);
+    }
+
+    async handleHoldup(chosenHoldup) {
         const foldMessage = encryptMessage({type: 'uint8', content: chosenHoldup.isFolding})
         const foldCommit = {
-            rival: chosenHoldup.isFolding,
+            isFolding: chosenHoldup.isFolding,
             password: foldMessage.password,
             encryptedMessage: foldMessage.encryptedMessage
         }
         // TODO: send foldMessage
         this.setState({foldCommit: foldCommit})
 
-        // Acknowladge that sent loadout
-        this.setState({gameState: GAME_STATES.CONFIRM_HOLDUP})
+        const isSent = await sendHoldupCommit(foldCommit.encryptedMessage);
+        // if send is successful
+        if(isSent){
+            this.setState({foldCommit: foldCommit})
+        }
     }
 
     continueToNextRound(){

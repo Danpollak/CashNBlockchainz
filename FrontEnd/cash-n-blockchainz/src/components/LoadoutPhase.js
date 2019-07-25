@@ -14,7 +14,6 @@ class LoadoutPhase extends React.Component {
         return (
             <div className='playersList'>
                 {_.map(playersList, (rival) =>{
-                    console.log(rival)
                     const {nickname, addr} = rival
                     return <button
                         style={{backgroundColor: addr === this.state.rival ? 'red' : 'blue'}}

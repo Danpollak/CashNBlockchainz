@@ -136,17 +136,17 @@
             }
         }
 
-        function holdupReveal(string calldata _bulletPassword, string calldata _isFoldPassword,
-                                uint8 _bulletReveal, uint8 _isFoldReveal) external {
-            bytes32 bulletApprove = keccak256(abi.encodePacked(_bulletPassword,"-",_bulletReveal));
-            require(currentRound[msg.sender].bulletCommit == bulletApprove,"Failed Reveal");
-            bytes32 isFoldApprove = keccak256(abi.encodePacked(_isFoldPassword,"-",_isFoldReveal));
-            require(currentRound[msg.sender].isFoldCommit == isFoldApprove,"Failed Reveal");
+        function holdupReveal(string calldata _bulletPassword, uint8 _bulletReveal,
+                                string calldata _isFoldPassword, uint8 _isFoldReveal) external {
+            bytes32 bulletApprove = keccak256(abi.encode(_bulletPassword,_bulletReveal));
+            require(currentRound[msg.sender].bulletCommit == bulletApprove);
+            bytes32 isFoldApprove = keccak256(abi.encode(_isFoldPassword,_isFoldReveal));
+            require(currentRound[msg.sender].isFoldCommit == isFoldApprove);
             currentRound[msg.sender].bullet = _bulletReveal;
             currentRound[msg.sender].isFolding = _isFoldReveal;
             actionCount++;
             if(actionCount == numberOfPlayersAlive){
-                endRound();
+            //    endRound();
             }
         }
         
@@ -224,29 +224,6 @@
             }
         }
         
-        function getRoundRivals() external view returns(address[] memory){
-            address[] memory roundRivals = new address[](numberOfPlayers);
-            for(uint i=0;i<playersList.length;i++){
-                roundRivals[i] = currentRound[playersList[i]].rival;
-            }
-            return roundRivals;
-        }
-        
-        function getRoundBullets() external view returns(uint[] memory){
-            uint[] memory roundBullets = new uint[](numberOfPlayers);
-            for(uint i=0;i<playersList.length;i++){
-                roundBullets[i] = currentRound[playersList[i]].bullet;
-            }
-            return roundBullets;
-        }
-        
-        function getRoundFolds() external view returns(uint[] memory){
-            uint[] memory roundFolds = new uint[](numberOfPlayers);
-            for(uint i=0;i<playersList.length;i++){
-                roundFolds[i] = currentRound[playersList[i]].isFolding;
-            }
-            return roundFolds;
-        }
         
 
     }
