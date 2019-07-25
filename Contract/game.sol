@@ -41,13 +41,15 @@
         Phases public currentPhase = Phases.WaitingForPlayers;
         uint public roundNum = 0;
         uint public maxRound = 8;
-        uint numberOfPlayers = 2;
+        uint numberOfPlayers = 1;
         uint numberOfPlayersAlive = numberOfPlayers;
         uint public numRegistered = 0;
         uint public actionCount = 0;
         uint public buyIn = 1 ether / 10;
         uint public roundValue = (buyIn*numberOfPlayers) / 8;
         address payable[] public playersList = new address payable[](numberOfPlayers);
+        bytes32 public addr1;
+        bytes32 public addr2;
 
         event GameStart();
         event NextPhase();
@@ -112,14 +114,14 @@
 
         function loadoutReveal(string calldata _rivalPassword, bytes20 _rivalReveal) external {
             bytes32 rivalApprove = keccak256(abi.encode(_rivalPassword,_rivalReveal));
-            require(currentRound[msg.sender].rivalCommit == rivalApprove,"Failed Reveal - doesn't match your commit.");
+            require(currentRound[msg.sender].rivalCommit == rivalApprove);
             currentRound[msg.sender].rival = address(_rivalReveal);
             actionCount++;
-            if(actionCount == numberOfPlayersAlive){
-                 currentPhase = Phases.HoldupCommit;
-                 actionCount = 0;
-                 emit NextPhase();
-            }
+             if(actionCount == numberOfPlayersAlive){
+                  currentPhase = Phases.HoldupCommit;
+                  actionCount = 0;
+                  emit NextPhase();
+             }
         }
  
         function holdupCommit(bytes32 _isFoldCommit) external {

@@ -2,7 +2,7 @@ import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 import {jsonInterface} from '../contractABI'
 const keccak256 = require('js-sha3').keccak_256;
-const CONTRACT_ADDRESS = '0x6037a4eee4fda579b89bab188bf76520450f7654';
+const CONTRACT_ADDRESS = '0x0d6ef3bd9e3ced19381ff306c9ef9ae59e04a6d4';
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider('ws://localhost:8546'), null, {});
 
@@ -11,6 +11,7 @@ const generatePassword = () => {
 }
 
 const encryptMessage = ({content, type}) => {
+    console.log(type, content)
     const password = generatePassword();
     const message = web3.eth.abi.encodeParameters(['string',type],[password, content]);
     const encryptedMessage = web3.utils.keccak256(message);
@@ -59,11 +60,8 @@ const setContractListeners = (gameStart, nextPhase) => {
 const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
     try {
         const contract = getContract();
-        const convertedRival = `0x${rivalCommit}`;
-        const convertedBullet = `0x${bulletCommit}`
         const playerAccount = await getPlayerAccount();
-        console.log(convertedRival, convertedBullet)
-        const receipt = await contract.methods.loadoutCommit(convertedRival, convertedBullet).send({from: playerAccount});
+        const receipt = await contract.methods.loadoutCommit(rivalCommit, bulletCommit).send({from: playerAccount});
     } catch (e) {
         console.log(e)
         console.log('failed tx')
@@ -77,8 +75,11 @@ const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
 const confirmLoadout = async (commit) => {
     try {
     const {rival, password} = commit;
+    console.log(commit);
     const contract = getContract();
-    const receipt = await contract.methods.loadoutReveal(password, rival).call(); 
+    const playerAccount = await getPlayerAccount();
+    const receipt = await contract.methods.loadoutReveal(password, rival).send({from: playerAccount});
+    console.log(receipt) 
     return true;
     } catch (e) {
         console.log(e);
@@ -122,4 +123,5 @@ const getPotValue = async () => {
     potValue = web3.utils.fromWei(web3.utils.toBN(potValue._hex),'ether'); 
     return potValue;
 }
+
 export {getPotValue, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, getGameText, payForGame, getGamePhase}

@@ -17,23 +17,24 @@ class GameLayout extends React.Component {
             rounds: [],
             playersList: {},
             playerData: {name: 'baba', clickBullet: 5, bangBullet: 3, waiting: false},
-            commits: {}
+            rivalCommit: {
+                encryptedMessage: "0xf94ba6722c4c20fd97cbb8e9906961034d820e4521fbd33674c95b2eb202a87f",
+                password: "oxahm94msdco",
+                rival: "0x6216e6a3621Ccc976364F86191AE505afe41FFB7"
+            }
         }
     }
 
 
     componentDidMount() {
         document.addEventListener('goToPhase', (e) => {
-            this.startGame()
+            setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
+            this.startGame().then(() =>this.setState({gameState:1}));
         })
     }
 
-    updateGameState() {
-        const newGameState = getGamePhase();
-        // Check if state switch requires sending confirms
-        if(newGameState === GAME_STATES.CONFIRM_LOADOUT){
-            confirmLoadout(this.state.rivalCommit)
-        }
+    async updateGameState() {
+        const newGameState = await getGamePhase();
         if(newGameState === GAME_STATES.CONFIRM_HOLDUP){
             // TODO: SEND CONFIRM MESSAGES
         }
@@ -63,7 +64,12 @@ class GameLayout extends React.Component {
             case GAME_STATES.CONFIRM_LOADOUT:
                  {
                 const {gameData, playerData, playersList} = this.state;
-                return (<LoadoutPhase gameData={gameData} playersList={playersList} playerData={playerData} gameState={gameState} handleLoadout={this.handleLoadout.bind(this)}/>);
+                return (<LoadoutPhase gameData={gameData}
+                    playersList={playersList}
+                    playerData={playerData}
+                    gameState={gameState}
+                    handleLoadout={this.handleLoadout.bind(this)}
+                    confirmLoadout={this.sendConfirmLoadout.bind(this)}/>);
             }
             case GAME_STATES.HOLDUP:
             case GAME_STATES.CONFIRM_HOLDUP: {
@@ -81,7 +87,7 @@ class GameLayout extends React.Component {
     }
 
     async beginWeb3Transaction(){
-        setContractListeners(this.startGame.bind(this),this.renderGameState.bind(this));
+        setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
         const isPaid = await payForGame("bob");
         if(isPaid){
             this.setState({gameState: GAME_STATES.WAITING_FOR_PLAYERS});
@@ -98,7 +104,7 @@ class GameLayout extends React.Component {
 
     async handleLoadout(chosenLoadout){
         // create rivalCommit
-        const rivalMessage = encryptMessage({sender: 'me', content: chosenLoadout.rival})
+        const rivalMessage = encryptMessage({type: 'bytes20', content: chosenLoadout.rival})
         const rivalCommit = {
             rival: chosenLoadout.rival,
             password: rivalMessage.password,
@@ -106,7 +112,8 @@ class GameLayout extends React.Component {
         }
 
         // create bulletCommit
-        const bulletMessage = encryptMessage({sender: 'me', content: chosenLoadout.chosenBullet})
+        console.log(chosenLoadout)
+        const bulletMessage = encryptMessage({type: 'uint8', content: chosenLoadout.bullet})
         const bulletCommit = {
             bullet: chosenLoadout.bullet,
             password: bulletMessage.password,
@@ -127,8 +134,13 @@ class GameLayout extends React.Component {
         }
     }
 
+    async sendConfirmLoadout () {
+        console.log(this.state)
+        await confirmLoadout(this.state.rivalCommit);
+    }
+
     handleHoldup(chosenHoldup) {
-        const foldMessage = encryptMessage({sender: 'me', content: chosenHoldup.isFolding})
+        const foldMessage = encryptMessage({type: 'uint8', content: chosenHoldup.isFolding})
         const foldCommit = {
             rival: chosenHoldup.isFolding,
             password: foldMessage.password,

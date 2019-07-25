@@ -10,7 +10,7 @@ class LoadoutPhase extends React.Component {
 
     generateRivalButtons(){
         let {playersList} = this.props
-        //TODO: emit the current player
+        //TODO: remove the current player
         return (
             <div className='playersList'>
                 {_.map(playersList, (rival) =>{
@@ -63,18 +63,16 @@ class LoadoutPhase extends React.Component {
         
     }
     generateSubmitButton(){
-        const {gameState} = this.props;
+        const {gameState, confirmLoadout} = this.props;
         const isSent = GAME_STATES.CONFIRM_LOADOUT === gameState;
         return (
                 <div className="submitButton">
                     <button
-                        onClick={this.sendLoadout.bind(this)}
-                        disabled={isSent}
+                        onClick={isSent ? confirmLoadout: this.sendLoadout.bind(this)}
                         >
-                        Submit
+                        {isSent ? 'Confirm Choice' : 'Submit'}
                     </button>
                     <br/>
-                    {isSent ? "Waiting for all players" : null }
                 </div>)
     }
 
