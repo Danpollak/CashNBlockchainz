@@ -15,9 +15,9 @@ class LoadoutPhase extends React.Component {
                 {_.map(playersList, (rival) =>{
                     const {nickname, addr} = rival
                     const sentChoice = waiting || gameState === GAME_STATES.CONFIRM_LOADOUT;
-                    if(playerAddress === addr){
-                        return;
-                    }
+                    // if(playerAddress === addr){
+                    //     return;
+                    // }
                     return <button
                         style={{backgroundColor: addr === this.state.rival ? 'red' : 'blue'}}
                         onClick={() => this.setState({rival: addr})}

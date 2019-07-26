@@ -13,7 +13,7 @@ class GameLayout extends React.Component {
         this.state ={
             gameState: GAME_STATES.AWAITING_PAYMENT,
             gameData: {currentRound: 0, pot:0},
-            rounds: [],
+            showRoundEnd: false,
             playersList: {},
             playerData: {name: 'baba', clickBullet: 5, bangBullet: 3, waiting: false},
             playerAddress: '',
@@ -27,22 +27,30 @@ class GameLayout extends React.Component {
 
 
     componentDidMount() {
-        setInterval(this.updateGameState.bind(this), 60 * 1000)
+        setInterval(this.updateGameState.bind(this), 3 * 1000)
+        console.log(process.argv);
     }
 
     async updateGameState() {
         const currentState = this.state.gameState;
         const newGameState = await contractActions.getGamePhase();
         if(currentState !== newGameState){
+            const playersList = await contractActions.getPlayersList();
             const pot = await contractActions.getPotValue();
             const currentRound = await contractActions.getCurrentRound()
             const gameData = {pot: pot, currentRound: currentRound}
-            this.setState({waiting: false, gameState: newGameState, gameData: gameData})
+            const isReveal = currentState === GAME_STATES.CONFIRM_HOLDUP;
+            this.setState({playersList:playersList, showRoundEnd: isReveal, waiting: false, gameState: newGameState, gameData: gameData})
         }
     }
 
     renderGameState() {
-        const {gameState, gameData, playerData, playersList, waiting, playerAddress} = this.state;
+        const {gameState, gameData, playerData, playersList, waiting, playerAddress, showRoundEnd} = this.state;
+        if(showRoundEnd){
+            return (<RevealPhase
+                playersList={playersList}
+                continueToNextRound={this.continueToNextRound.bind(this)}/>); 
+        }
         switch (gameState){
             case GAME_STATES.AWAITING_PAYMENT:{
               return (<AwaitPaymentPhase waiting={waiting} paymentMethod={this.beginWeb3Transaction.bind(this)}/>);     
@@ -75,10 +83,6 @@ class GameLayout extends React.Component {
                     playerAddress={playerAddress}
                     />);
             }
-            case GAME_STATES.REVEAL: {
-                const {gameData, playerData} = this.state;
-                return (<RevealPhase gameData={gameData} playerData={playerData} continueToNextRound={this.continueToNextRound.bind(this)}/>);
-            }
             default:{
                 return "I Am Groot"
             }
@@ -102,7 +106,7 @@ class GameLayout extends React.Component {
         const pot = await contractActions.getPotValue();
         const gameData = {pot: pot, currentRound: 1}
         const playerAddress = await contractActions.getPlayerAccount();
-        this.setState({playerAddress: playerAddress, gameState: GAME_STATES.LOADOUT, playersList: playersList, gameData: gameData})
+        this.setState({waiting: false, playerAddress: playerAddress, gameState: GAME_STATES.LOADOUT, playersList: playersList, gameData: gameData})
     }
 
     async handleLoadout(chosenLoadout){
@@ -176,7 +180,7 @@ class GameLayout extends React.Component {
     }
 
     continueToNextRound(){
-        this.setState({gameState: GAME_STATES.LOADOUT})
+        this.setState({showRoundEnd: false})
     }
 
   render(){

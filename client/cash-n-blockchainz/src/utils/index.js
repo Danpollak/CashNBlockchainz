@@ -1,9 +1,12 @@
 import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 import {jsonInterface} from '../contractABI'
-const CONTRACT_ADDRESS = '0x22b876ee1f73bed66c69dd0d81cb31e0d56992f8';
+import {contractAddress} from '../contract'
+const CONTRACT_ADDRESS = contractAddress;
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider('ws://localhost:8546'), null, {});
+//const content = fs.readFileSync("../../../contract.json");
+
 
 export function generatePassword(){
     return RandomString.generate({length: 12 }).toLowerCase()
@@ -147,6 +150,16 @@ export async function  getPlayerAction(playerList,action){
     return actionList;
 }
 
+export async function  getPrevPlayerAction(playerList,action){
+    const contract = getContract();
+    let actionList = {};
+    for(let playerAddress in playerList){
+        const playerAction = await contract.methods.prevRound(playerAddress).call();
+        actionList[playerAddress] = playerAction[action];
+    }
+    return actionList;
+}
+
 export async function  getPotValue() {
     const contract = getContract();
     let potValue = await contract.methods.roundValue().call();
@@ -157,7 +170,6 @@ export async function  getPotValue() {
 export async function  getCurrentRound () {
     const contract = getContract();
     let roundNum = await contract.methods.roundNum().call();
-    console.log(roundNum);
     roundNum = web3.utils.fromWei(web3.utils.toBN(roundNum._hex),'wei'); 
     return roundNum;
 }

@@ -35,19 +35,21 @@
         uint8 bullet;
         uint isFolding;
         bool isOut;
+        bool sentAction;
         }
         
         mapping (address => PlayerActions) public currentRound;
+        mapping (address => PlayerActions) public prevRound;
 
         Phases public currentPhase = Phases.WaitingForPlayers;
         uint public roundNum = 0;
-        uint public maxRound = 8;
-        uint numberOfPlayers = 2;
+        uint public maxRound = 1;
+        uint numberOfPlayers = 1;
         uint numberOfPlayersAlive = numberOfPlayers;
         uint public numRegistered = 0;
         uint public actionCount = 0;
         uint public buyIn = 1 ether / 10;
-        uint public roundValue = (buyIn*numberOfPlayers) / 8;
+        uint public roundValue = (buyIn*numberOfPlayers) / maxRound;
         address payable[] public playersList = new address payable[](numberOfPlayers);
         uint public prize;
 
@@ -57,7 +59,7 @@
         mapping (address => uint) public pointsEarned;
         mapping (address => player) public playersInfo;
 
-        function register(string calldata _nickname) external payable {
+        function register(string calldata _nickname) atStage(Phases.WaitingForPlayers) external payable {
             require(numRegistered < numberOfPlayers, "The max amount of players was reached");
 
             // check if a player is already registered
@@ -82,62 +84,62 @@
             }
         }
 
+        modifier atStage(Phases _phase) {
+            require(currentPhase == _phase, "This is not the current phase.");
+            _;
+        }
+        
+        modifier canPlayerPlay() {
+            require(playersInfo[msg.sender].wounds < 3);
+            require(playersInfo[msg.sender].addr == msg.sender);
+            require(!currentRound[msg.sender].sentAction);
+            _;
+        }
+        
         function startGame() internal {
             roundNum++;
             currentPhase = Phases.LoadoutCommit;
             emit GameStart();
         }
         
-        modifier atStage(Phases _phase) {
-            require(currentPhase == _phase, "This is not the current phase.");
-            _;
-        }
-        
-        modifier isPlayerAlive(address _player) {
-            require(playersInfo[_player].wounds > 2, "Dead players can't participate it the game.");
-            _;
-        }
-        
-        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) external  {
-            //TODO: sender is part of the game!
-            require(currentRound[msg.sender].rivalCommit == "", "Only send commits once");
-            require(currentRound[msg.sender].bulletCommit == "", "Only send commits once");
+        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) canPlayerPlay() external  {
             currentRound[msg.sender].rivalCommit = _rivalCommit;
             currentRound[msg.sender].bulletCommit = _bulletCommit;
             actionCount++;
+            currentRound[msg.sender].sentAction = true;
             if(actionCount == numberOfPlayersAlive){
                 currentPhase = Phases.LoadoutReveal;
-                actionCount = 0;
+                clearActions();
                 emit NextPhase();
             }
         }
 
-        function loadoutReveal(string calldata _rivalPassword, bytes20 _rivalReveal) external {
+        function loadoutReveal(string calldata _rivalPassword, bytes20 _rivalReveal) atStage(Phases.LoadoutReveal) canPlayerPlay() external {
             bytes32 rivalApprove = keccak256(abi.encode(_rivalPassword,_rivalReveal));
             require(currentRound[msg.sender].rivalCommit == rivalApprove);
             currentRound[msg.sender].rival = address(_rivalReveal);
             actionCount++;
+            currentRound[msg.sender].sentAction = true;
              if(actionCount == numberOfPlayersAlive){
                   currentPhase = Phases.HoldupCommit;
-                  actionCount = 0;
+                  clearActions();
                   emit NextPhase();
              }
         }
  
-        function holdupCommit(bytes32 _isFoldCommit) external {
-            //TODO: Validate player not sent twice
-            require(currentRound[msg.sender].isFoldCommit == "", "Only send commits once");
+        function holdupCommit(bytes32 _isFoldCommit) atStage(Phases.HoldupCommit) canPlayerPlay() external {
             currentRound[msg.sender].isFoldCommit = _isFoldCommit;
             actionCount++;
+            currentRound[msg.sender].sentAction = true;
             if(actionCount == numberOfPlayersAlive){
                 currentPhase = Phases.HoldupReveal;
-                actionCount = 0;
+                clearActions();
                 emit NextPhase();
             }
         }
 
         function holdupReveal(string calldata _bulletPassword, uint8 _bulletReveal,
-                                string calldata _isFoldPassword, uint8 _isFoldReveal) external {
+                                string calldata _isFoldPassword, uint8 _isFoldReveal) atStage(Phases.HoldupReveal) canPlayerPlay() external {
             bytes32 bulletApprove = keccak256(abi.encode(_bulletPassword,_bulletReveal));
             require(currentRound[msg.sender].bulletCommit == bulletApprove);
             bytes32 isFoldApprove = keccak256(abi.encode(_isFoldPassword,_isFoldReveal));
@@ -145,6 +147,7 @@
             currentRound[msg.sender].bullet = _bulletReveal;
             currentRound[msg.sender].isFolding = _isFoldReveal;
             actionCount++;
+            currentRound[msg.sender].sentAction = true;
             if(actionCount == numberOfPlayersAlive){
                 endRound();
             }
@@ -160,10 +163,9 @@
                 address currentPlayer = playersList[i];
                 if(playersInfo[currentPlayer].wounds > 2){
                     leftoutPlayersCount++;
-                    continue;
                 }
                 // if player has folded, throw him out of the round pot
-                if(currentRound[currentPlayer].isFolding == FOLD){
+                else if(currentRound[currentPlayer].isFolding == FOLD){
                     currentRound[currentPlayer].isOut = true;
                     leftoutPlayersCount++;
                 }
@@ -202,13 +204,17 @@
 
             // check if to move to next round or end game
              roundNum++;
-            if(roundNum > maxRound){
-                endGame();
-            } else {
             for(uint i = 0; i < numberOfPlayers; i++){
                 address currentPlayer = playersList[i];
+                if(roundNum > 1){
+                    delete prevRound[currentPlayer];
+                }
+                prevRound[currentPlayer] = currentRound[currentPlayer];
                 delete currentRound[currentPlayer];
             }
+            if(roundNum > maxRound){
+                endGame();
+            } else  {
                 currentPhase = Phases.LoadoutCommit;
                 actionCount = 0;
                 emit NextPhase();
@@ -216,10 +222,19 @@
         }
 
         function endGame() internal {
-            for(uint i = 0;i < playersList.length;i++){
-                //address payable playerAddr = playersList[i];
-                playersList[i].transfer(pointsEarned[playersList[i]]/100);
+            for(uint i = 0;i < numberOfPlayers;i++){
+                address payable currentPlayer = playersList[i];
+                currentPlayer.transfer(pointsEarned[currentPlayer]);
             }
+            currentPhase = Phases.EndGame;
+        }
+        
+        function clearActions() internal {
+            for(uint i = 0; i < numberOfPlayers; i++){
+                address currentPlayer = playersList[i];
+                currentRound[currentPlayer].sentAction = false;
+            } 
+            actionCount = 0;
         }
         
         
