@@ -174,4 +174,15 @@ export async function  getCurrentRound () {
     return roundNum;
 }
 
+export async function getEndGame (playerList) {
+    const contract = getContract();
+    let endGameData = {};
+    for(let playerAddress in playerList){
+        const moneyEarned = await contract.methods.pointsEarned(playerAddress).call();
+        endGameData[playerAddress] = web3.utils.fromWei(web3.utils.toBN(moneyEarned._hex),'ether');
+    }
+    return endGameData;
+    
+}
+
 //export default {getCurrentRound, getPotValue, sendHoldupCommit, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, confirmHoldup, getGameText, payForGame, getGamePhase, getPlayerAction}

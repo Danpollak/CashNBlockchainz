@@ -4,6 +4,7 @@ import HoldupPhase from './HoldupPhase'
 import AwaitPaymentPhase from './AwaitPaymentPhase'
 import WaitingForPlayersPhase from './WaitForPlayersPhase'
 import RevealPhase from './RevealPhase'
+import EndGamePhase from './EndGamePhase'
 import {GAME_STATES, BULLETS} from '../constants'
 import * as contractActions from '../utils'
 
@@ -28,7 +29,6 @@ class GameLayout extends React.Component {
 
     componentDidMount() {
         setInterval(this.updateGameState.bind(this), 3 * 1000)
-        console.log(process.argv);
     }
 
     async updateGameState() {
@@ -83,8 +83,11 @@ class GameLayout extends React.Component {
                     playerAddress={playerAddress}
                     />);
             }
+            case GAME_STATES.END_GAME:{
+                return <EndGamePhase playersList={playersList} />;
+            }
             default:{
-                return "I Am Groot"
+                return "I Am Impossible"
             }
         }
     }
