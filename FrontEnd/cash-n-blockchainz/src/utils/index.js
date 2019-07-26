@@ -1,15 +1,15 @@
 import RandomString from 'randomstring'
 import {GAME_TEXT} from '../constants'
 import {jsonInterface} from '../contractABI'
-const CONTRACT_ADDRESS = '0xd87fdca47d6008cf6a6c094199ace741eedfbbf9';
+const CONTRACT_ADDRESS = '0x22b876ee1f73bed66c69dd0d81cb31e0d56992f8';
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider('ws://localhost:8546'), null, {});
 
-const generatePassword = () => {
+export function generatePassword(){
     return RandomString.generate({length: 12 }).toLowerCase()
 }
 
-const encryptMessage = ({content, type}) => {
+export function encryptMessage ({content, type}) {
     const password = generatePassword();
     const message = web3.eth.abi.encodeParameters(['string',type],[password, content]);
     const encryptedMessage = web3.utils.keccak256(message);
@@ -18,23 +18,23 @@ const encryptMessage = ({content, type}) => {
     }
 }
 
-const getGameText = (gameState) => {
+export function getGameText (gameState) {
     return GAME_TEXT[gameState];
 }
 
 
 /** WEB3 FUNCTIONS */
 
-const getContract = () => {
+export function getContract() {
     return web3.eth.Contract(jsonInterface, CONTRACT_ADDRESS, {transactionConfirmationBlocks: 3});
 }
 
-const getPlayerAccount = async () =>  {
+export async function getPlayerAccount() {
     let accounts = await web3.eth.getAccounts();
     return accounts[0];
 }
 
-const payForGame = async (nickname) => {
+export async function payForGame(nickname){
     try {
     const contract = getContract();
     const playerAccount = await getPlayerAccount();
@@ -49,7 +49,7 @@ const payForGame = async (nickname) => {
     }
 }
 
-const setContractListeners = (gameStart, nextPhase) => {
+export function setContractListeners (gameStart, nextPhase) {
     const contract = getContract();
     contract.events.GameStart({}, gameStart);
     contract.events.NextPhase({}, nextPhase);
@@ -57,7 +57,7 @@ const setContractListeners = (gameStart, nextPhase) => {
     console.log("listening");
 }
 
-const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
+export async function sendLoadoutCommit(rivalCommit, bulletCommit) {
     try {
         const contract = getContract();
         const playerAccount = await getPlayerAccount();
@@ -71,7 +71,7 @@ const sendLoadoutCommit = async (rivalCommit, bulletCommit) => {
     }
 }
 
-const confirmLoadout = async (commit) => {
+export async function confirmLoadout(commit){
     try {
     const {rival, password} = commit;
     console.log(commit);
@@ -86,7 +86,7 @@ const confirmLoadout = async (commit) => {
     }
 }
 
-const sendHoldupCommit = async (foldCommit) => {
+export async function sendHoldupCommit(foldCommit){
     try {
         const contract = getContract();
         const playerAccount = await getPlayerAccount();
@@ -100,7 +100,7 @@ const sendHoldupCommit = async (foldCommit) => {
     }
 }
 
-const confirmHoldup = async (bulletCommit, foldCommit) => {
+export async function confirmHoldup (bulletCommit, foldCommit) {
     try {
     const contract = getContract();
     const playerAccount = await getPlayerAccount();
@@ -114,7 +114,7 @@ const confirmHoldup = async (bulletCommit, foldCommit) => {
     }
 }
 
-const getGamePhase = async () => {
+export async function getGamePhase() {
     try {
         const contract = getContract();
         const gamePhase =  await contract.methods.currentPhase().call();
@@ -125,7 +125,7 @@ const getGamePhase = async () => {
     }
 }
 
-const getPlayersList = async () => {
+export async function getPlayersList(){
     const contract = getContract();
     const amountOfPlayers = await contract.methods.numRegistered().call();
     let playerList = {};
@@ -137,7 +137,7 @@ const getPlayersList = async () => {
     return playerList;
 }
 
-const getPlayerAction = async (playerList,action) => {
+export async function  getPlayerAction(playerList,action){
     const contract = getContract();
     let actionList = {};
     for(let playerAddress in playerList){
@@ -147,11 +147,19 @@ const getPlayerAction = async (playerList,action) => {
     return actionList;
 }
 
-const getPotValue = async () => {
+export async function  getPotValue() {
     const contract = getContract();
     let potValue = await contract.methods.roundValue().call();
     potValue = web3.utils.fromWei(web3.utils.toBN(potValue._hex),'ether'); 
     return potValue;
 }
 
-export {getPotValue, sendHoldupCommit, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, confirmHoldup, getGameText, payForGame, getGamePhase, getPlayerAction}
+export async function  getCurrentRound () {
+    const contract = getContract();
+    let roundNum = await contract.methods.roundNum().call();
+    console.log(roundNum);
+    roundNum = web3.utils.fromWei(web3.utils.toBN(roundNum._hex),'wei'); 
+    return roundNum;
+}
+
+//export default {getCurrentRound, getPotValue, sendHoldupCommit, sendLoadoutCommit, getPlayersList, getContract, setContractListeners, encryptMessage, confirmLoadout, confirmHoldup, getGameText, payForGame, getGamePhase, getPlayerAction}

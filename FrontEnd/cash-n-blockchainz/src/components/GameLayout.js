@@ -4,19 +4,19 @@ import HoldupPhase from './HoldupPhase'
 import AwaitPaymentPhase from './AwaitPaymentPhase'
 import WaitingForPlayersPhase from './WaitForPlayersPhase'
 import RevealPhase from './RevealPhase'
-import {GAME_STATES, BULLETS, FOLD_STATES} from '../constants'
-import {setContractListeners, getPlayersList, encryptMessage, sendLoadoutCommit,
-    getGameText, payForGame, getGamePhase, confirmLoadout, confirmHoldup, getPotValue, sendHoldupCommit} from '../utils'
+import {GAME_STATES, BULLETS} from '../constants'
+import * as contractActions from '../utils'
 
 class GameLayout extends React.Component {
     constructor(){
         super();
         this.state ={
             gameState: GAME_STATES.AWAITING_PAYMENT,
-            gameData: {currentRound: -1, pot:125},
+            gameData: {currentRound: 0, pot:0},
             rounds: [],
             playersList: {},
             playerData: {name: 'baba', clickBullet: 5, bangBullet: 3, waiting: false},
+            playerAddress: '',
             rivalCommit: {
                 encryptedMessage: "0xf94ba6722c4c20fd97cbb8e9906961034d820e4521fbd33674c95b2eb202a87f",
                 password: "oxahm94msdco",
@@ -28,22 +28,24 @@ class GameLayout extends React.Component {
 
     componentDidMount() {
         setInterval(this.updateGameState.bind(this), 60 * 1000)
-        document.addEventListener('goToPhase', (e) => {
-            setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
-            this.startGame().then(() =>this.updateGameState());
-        })
     }
 
     async updateGameState() {
-        const newGameState = await getGamePhase();
-        this.setState({gameState: newGameState})
+        const currentState = this.state.gameState;
+        const newGameState = await contractActions.getGamePhase();
+        if(currentState !== newGameState){
+            const pot = await contractActions.getPotValue();
+            const currentRound = await contractActions.getCurrentRound()
+            const gameData = {pot: pot, currentRound: currentRound}
+            this.setState({waiting: false, gameState: newGameState, gameData: gameData})
+        }
     }
 
     renderGameState() {
-        const {gameState, gameData, playerData, playersList} = this.state;
+        const {gameState, gameData, playerData, playersList, waiting, playerAddress} = this.state;
         switch (gameState){
             case GAME_STATES.AWAITING_PAYMENT:{
-              return (<AwaitPaymentPhase paymentMethod={this.beginWeb3Transaction.bind(this)}/>);     
+              return (<AwaitPaymentPhase waiting={waiting} paymentMethod={this.beginWeb3Transaction.bind(this)}/>);     
             }
             case GAME_STATES.WAITING_FOR_PLAYERS: {
                 return (<WaitingForPlayersPhase />);
@@ -56,7 +58,9 @@ class GameLayout extends React.Component {
                     playerData={playerData}
                     gameState={gameState}
                     handleLoadout={this.handleLoadout.bind(this)}
-                    confirmLoadout={this.sendConfirmLoadout.bind(this)}/>);
+                    confirmLoadout={this.sendConfirmLoadout.bind(this)}
+                    waiting={waiting}
+                    playerAddress={playerAddress}/>);
             }
             case GAME_STATES.HOLDUP:
             case GAME_STATES.CONFIRM_HOLDUP: {
@@ -67,6 +71,8 @@ class GameLayout extends React.Component {
                     gameState={gameState}
                     handleHoldup={this.handleHoldup.bind(this)}
                     confirmHoldup={this.sendConfirmHoldup.bind(this)}
+                    waiting={waiting}
+                    playerAddress={playerAddress}
                     />);
             }
             case GAME_STATES.REVEAL: {
@@ -79,25 +85,29 @@ class GameLayout extends React.Component {
         }
     }
 
-    async beginWeb3Transaction(){
-        setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
-        const isPaid = await payForGame("bob");
+    async beginWeb3Transaction(nickname){
+        contractActions.setContractListeners(this.startGame.bind(this),this.updateGameState.bind(this));
+        this.setState({waiting: true});
+        const isPaid = await contractActions.payForGame(nickname);
         if(isPaid){
-            this.setState({gameState: GAME_STATES.WAITING_FOR_PLAYERS});
+            this.setState({waiting: false, gameState: GAME_STATES.WAITING_FOR_PLAYERS});
+        } else {
+            this.setState({waiting: false});
         }
         
     }
 
     async startGame() {
-        const playersList = await getPlayersList();
-        const pot = await getPotValue();
+        const playersList = await contractActions.getPlayersList();
+        const pot = await contractActions.getPotValue();
         const gameData = {pot: pot, currentRound: 1}
-        this.setState({gameState: GAME_STATES.LOADOUT, playersList: playersList, gameData: gameData})
+        const playerAddress = await contractActions.getPlayerAccount();
+        this.setState({playerAddress: playerAddress, gameState: GAME_STATES.LOADOUT, playersList: playersList, gameData: gameData})
     }
 
     async handleLoadout(chosenLoadout){
         // create rivalCommit
-        const rivalMessage = encryptMessage({type: 'bytes20', content: chosenLoadout.rival})
+        const rivalMessage = contractActions.encryptMessage({type: 'bytes20', content: chosenLoadout.rival})
         const rivalCommit = {
             rival: chosenLoadout.rival,
             password: rivalMessage.password,
@@ -105,7 +115,7 @@ class GameLayout extends React.Component {
         }
 
         // create bulletCommit
-        const bulletMessage = encryptMessage({type: 'uint8', content: chosenLoadout.bullet})
+        const bulletMessage = contractActions.encryptMessage({type: 'uint8', content: chosenLoadout.bullet})
         const bulletCommit = {
             bullet: chosenLoadout.bullet,
             password: bulletMessage.password,
@@ -113,40 +123,55 @@ class GameLayout extends React.Component {
         }
         
         // send commits
-        const isSent = await sendLoadoutCommit(rivalMessage.encryptedMessage, bulletMessage.encryptedMessage);
+        this.setState({waiting: true});
+        const isSent = await contractActions.sendLoadoutCommit(rivalMessage.encryptedMessage, bulletMessage.encryptedMessage);
         // if send is successful
         if(isSent){
             const {playerData} = this.state;
-            let updatedPlayerData = {name: playerData.name, waiting: true};
-            const isClick = chosenLoadout.chosenBullet === BULLETS.CLICK;
+            let updatedPlayerData = {name: playerData.name};
+            const isClick = chosenLoadout.bullet === BULLETS.CLICK;
             updatedPlayerData.clickBullet = isClick ? playerData.clickBullet -1 : playerData.clickBullet;
             updatedPlayerData.bangBullet = isClick ? playerData.bangBullet : playerData.bangBullet - 1;
-            this.setState({playerData: updatedPlayerData, rivalCommit: rivalCommit, bulletCommit: bulletCommit})
+            this.setState({ playerData: updatedPlayerData, rivalCommit: rivalCommit, bulletCommit: bulletCommit})
+        } else {
+            this.setState({waiting: false});
         }
     }
 
     async sendConfirmLoadout () {
-        await confirmLoadout(this.state.rivalCommit);
+        this.setState({waiting: true});
+        const isSent = await contractActions.confirmLoadout(this.state.rivalCommit);
+        if(!isSent){
+            this.setState({waiting: false});
+
+        }
     }
 
     async sendConfirmHoldup () {
-        await confirmHoldup(this.state.bulletCommit,this.state.foldCommit);
+        this.setState({waiting: true});
+        const isSent = await contractActions.confirmHoldup(this.state.bulletCommit,this.state.foldCommit);
+        if(!isSent){
+            this.setState({waiting: false});
+
+        }
     }
 
     async handleHoldup(chosenHoldup) {
-        const foldMessage = encryptMessage({type: 'uint8', content: chosenHoldup.isFolding})
+        const foldMessage = contractActions.encryptMessage({type: 'uint8', content: chosenHoldup.isFolding})
         const foldCommit = {
             isFolding: chosenHoldup.isFolding,
             password: foldMessage.password,
             encryptedMessage: foldMessage.encryptedMessage
         }
-        // TODO: send foldMessage
         this.setState({foldCommit: foldCommit})
 
-        const isSent = await sendHoldupCommit(foldCommit.encryptedMessage);
+        this.setState({waiting: true});
+        const isSent = await contractActions.sendHoldupCommit(foldCommit.encryptedMessage);
         // if send is successful
         if(isSent){
             this.setState({foldCommit: foldCommit})
+        } else {
+            this.setState({waiting: false});
         }
     }
 
@@ -157,7 +182,7 @@ class GameLayout extends React.Component {
   render(){
       return (
         <div className="GameLayout">
-            {getGameText(this.state.gameState)}
+            {contractActions.getGameText(this.state.gameState)}
             {this.renderGameState()}
         </div>
         );

@@ -16,18 +16,17 @@ class HoldupPhase extends React.Component {
     }
 
     generateHoldupStatus(){
-        const {playersList} = this.props;
+        const {playersList, playerAddress} = this.props;
         const {shootingList} = this.state;
-        //let shootingList = await getPlayerAction(playersList,'rival');
         return (
             <div className='shootingList'>
                 <table>
                     <tbody>
                         {_.map(shootingList, (val,key) =>{
                             return (<tr>
-                                <td>{playersList[key].nickname}</td>
+                                <td>{playerAddress === key ? 'You' : playersList[key].nickname}</td>
                                 <td>points at</td>
-                                <td>{playersList[val].nickname}</td>
+                                <td>{playerAddress === val ? 'You' : playersList[val].nickname}</td>
                                 </tr>
                         )})}
                     </tbody>
@@ -45,20 +44,23 @@ class HoldupPhase extends React.Component {
     }
 
     createFoldingButton(value, key){
+        const {waiting, gameState} = this.props;
+        const sentChoice = waiting || gameState === GAME_STATES.CONFIRM_HOLDUP;
         return (
             <div className='foldingButton' style={{margin: '10px'}} key= {`${key}Button`}>
-                <button onClick={() => this.setState({isFolding: value})}>{key}</button>
+                <button disabled={sentChoice} onClick={() => this.setState({isFolding: value})}>{key}</button>
                 </div>
         )
     }
 
     generateSubmitButton(){
-        const {confirmHoldup, gameState} = this.props;
+        const {confirmHoldup, gameState, waiting} = this.props;
         const isSent = GAME_STATES.CONFIRM_HOLDUP === gameState;
         return (
                 <div className="submitButton">
                     <button
                         onClick={isSent ? confirmHoldup : this.sendDecideFold.bind(this)}
+                        disabled={waiting}
                         >
                         {isSent ? 'Confirm' : 'Submit'}
                     </button>
@@ -67,17 +69,20 @@ class HoldupPhase extends React.Component {
 
     sendDecideFold(){
         const {handleHoldup} = this.props;
+        const {isFolding} = this.state
+        if(!isFolding){
+            return;
+        }
         const holdup = {
-            isFolding: this.state.isFolding,
+            isFolding: isFolding,
         }
         handleHoldup(holdup);
     }
 
     render(){
-      const {gameData, gameState} = this.props;
-      const isSent = GAME_STATES.CONFIRM_HOLDUP === gameState;
+      const {gameData} = this.props;
       return (
-        <div className="LoadoutPhase">
+        <div className="HoldupPhase">
             <h2> round {gameData.round}</h2>
             <h3> Pot: {gameData.pot}</h3>
             {this.generateHoldupStatus()}
@@ -88,9 +93,4 @@ class HoldupPhase extends React.Component {
     }
 }
 
-{/* <h2> round {gameData.round}</h2>
-<h3> Pot: {gameData.pot}</h3>
-{this.generateHoldupStatus()}
-{!isSent ? this.generateFoldingButtons() : null}
-{!isSent ? this.generateSubmitButton() : "Waiting for Other Players"} */}
 export default HoldupPhase;

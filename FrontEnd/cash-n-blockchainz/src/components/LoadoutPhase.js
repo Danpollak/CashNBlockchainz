@@ -9,16 +9,20 @@ class LoadoutPhase extends React.Component {
     }
 
     generateRivalButtons(){
-        let {playersList} = this.props
-        //TODO: remove the current player
+        let {playersList, playerAddress, waiting, gameState} = this.props
         return (
             <div className='playersList'>
                 {_.map(playersList, (rival) =>{
                     const {nickname, addr} = rival
+                    const sentChoice = waiting || gameState === GAME_STATES.CONFIRM_LOADOUT;
+                    if(playerAddress === addr){
+                        return;
+                    }
                     return <button
                         style={{backgroundColor: addr === this.state.rival ? 'red' : 'blue'}}
                         onClick={() => this.setState({rival: addr})}
-                        key={addr}>
+                        key={addr}
+                        disabled={sentChoice}>
                         {nickname}
                         </button>
                 })}
@@ -38,6 +42,8 @@ class LoadoutPhase extends React.Component {
         const {playerData} = this.props
         const {chosenBullet}  = this.state
         const bulletValue = BULLETS[bulletType]
+        const {waiting, gameState} = this.props;
+        const sentChoice = waiting || gameState === GAME_STATES.CONFIRM_LOADOUT;
         return (
             <div className='bulletButton' style={{margin: '10px'}} key= {`${bulletType}BulletButton`}>
                 <img
@@ -46,8 +52,7 @@ class LoadoutPhase extends React.Component {
                     height="200px"
                     src={`./${bulletType}.jpeg`}
                     border={bulletValue === chosenBullet ? '3px' : '0px'}
-                    onClick={() => this.chooseBullet(bulletType)}
-                    
+                    onClick={() => {if(!sentChoice){this.chooseBullet(bulletType)}}}
                      />
                      <br/>
                         Remaining Bullets : {playerData[`${bulletType.toLowerCase()}Bullet`]}
@@ -62,12 +67,13 @@ class LoadoutPhase extends React.Component {
         
     }
     generateSubmitButton(){
-        const {gameState, confirmLoadout} = this.props;
+        const {gameState, confirmLoadout, waiting} = this.props;
         const isSent = GAME_STATES.CONFIRM_LOADOUT === gameState;
         return (
                 <div className="submitButton">
                     <button
                         onClick={isSent ? confirmLoadout: this.sendLoadout.bind(this)}
+                        disabled={waiting}
                         >
                         {isSent ? 'Confirm Choice' : 'Submit'}
                     </button>
@@ -77,12 +83,15 @@ class LoadoutPhase extends React.Component {
 
     sendLoadout(){
         const {handleLoadout} = this.props;
+        const {chosenBullet, rival} = this.state;
+        if(!chosenBullet || !rival){
+            return;
+        }
         const loadout = {
-            bullet: this.state.chosenBullet,
-            rival : this.state.rival
+            bullet: chosenBullet,
+            rival : rival
         }
         handleLoadout(loadout);
-        //TODO: lock choices
     }
   render(){
       const {gameData} = this.props;
