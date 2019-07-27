@@ -1,6 +1,7 @@
     pragma solidity ^0.5.10;
 
     contract BlockchainGuns {
+        // constants for game
         uint8 constant BANG = 1;
         uint8 constant CLICK = 2;
         uint8 constant STAY = 3;
@@ -43,8 +44,8 @@
 
         Phases public currentPhase = Phases.WaitingForPlayers;
         uint public roundNum = 0;
-        uint public maxRound = 1;
-        uint numberOfPlayers = 1;
+        uint public maxRound = 2; // CHANGED FOR TESTING, SHOULD BE 8
+        uint numberOfPlayers = 2; // CHANGED FOR TESTING, SHOULD BE 6
         uint numberOfPlayersAlive = numberOfPlayers;
         uint public numRegistered = 0;
         uint public actionCount = 0;
@@ -102,7 +103,7 @@
             emit GameStart();
         }
         
-        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) canPlayerPlay() external  {
+        function loadoutCommit(bytes32 _rivalCommit, bytes32 _bulletCommit) atStage(Phases.LoadoutCommit) canPlayerPlay() external  {
             currentRound[msg.sender].rivalCommit = _rivalCommit;
             currentRound[msg.sender].bulletCommit = _bulletCommit;
             actionCount++;
@@ -224,7 +225,9 @@
         function endGame() internal {
             for(uint i = 0;i < numberOfPlayers;i++){
                 address payable currentPlayer = playersList[i];
-                currentPlayer.transfer(pointsEarned[currentPlayer]);
+                if(pointsEarned[currentPlayer] > 0){
+                    currentPlayer.transfer(pointsEarned[currentPlayer]);
+                }
             }
             currentPhase = Phases.EndGame;
         }
@@ -236,7 +239,5 @@
             } 
             actionCount = 0;
         }
-        
-        
 
     }

@@ -30,7 +30,6 @@ class revealPhase extends React.Component {
             const isPlayerFolded = foldActions[playerAddr] === FOLD_STATES.FOLD;
             const isBulletReal = bulletActions[playerAddr] === BULLETS.BANG;
             const rival = rivalActions[playerAddr];
-            console.log(playersList, rival);
             const rivalNickname = playersList[rival].nickname;
             const isRivalFolded = foldActions[rival] === FOLD_STATES.FOLD;
             return(
