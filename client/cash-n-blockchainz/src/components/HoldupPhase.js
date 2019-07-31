@@ -25,7 +25,7 @@ class HoldupPhase extends React.Component {
                         {_.map(shootingList, (val,key) =>{
                             return (<tr>
                                 <td>{playerAddress === key ? 'You' : playersList[key].nickname}</td>
-                                <td>points at</td>
+                                <td><img alt='' src='./pointingAt.png' width='60px'/></td>
                                 <td>{playerAddress === val ? 'You' : playersList[val].nickname}</td>
                                 </tr>
                         )})}

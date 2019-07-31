@@ -45,9 +45,9 @@ class revealPhase extends React.Component {
         if(isPlayerFolded){
             return 'has chickened out and folded!';
         } else if (isBulletReal){
-            return 'shot';
+            return <img alt='' src='./gunBang.png' width='90px'/>;
         } else {
-            return 'shot blank at';
+            return <img alt='' src='./gunClick.png' width='90px'/>;
         }
     }
 

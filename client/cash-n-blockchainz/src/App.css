@@ -17,6 +17,14 @@
   pointer-events: none;
 }
 
+.summaryTable table {
+  margin: 0 auto;
+}
+
+.shootingList table {
+  margin: 0 auto;
+}
+
 .App-header {
   min-height: 100vh;
   display: flex;

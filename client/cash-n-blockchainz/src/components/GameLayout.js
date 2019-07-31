@@ -29,6 +29,7 @@ class GameLayout extends React.Component {
 
     componentDidMount() {
         setInterval(this.updateGameState.bind(this), 3 * 1000)
+        window.ethereum.enable();
     }
 
     async updateGameState() {

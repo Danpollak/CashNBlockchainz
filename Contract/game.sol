@@ -198,7 +198,7 @@
             }
             for(uint i = 0;i < numberOfPlayers;i++){
                 address currentPlayer = playersList[i];
-                if((!currentRound[currentPlayer].isOut) || (playersInfo[currentPlayer].wounds < 3)){
+                if((!currentRound[currentPlayer].isOut) && (playersInfo[currentPlayer].wounds < 3)){
                     pointsEarned[currentPlayer]+=prize;
                 }
             }
